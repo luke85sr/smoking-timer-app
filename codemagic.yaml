@@ -4,7 +4,6 @@ workflows:
     environment:
       node: 18.18.0
       npm: 9.5.1
-      expo_cli_version: latest
     scripts:
       - name: Install dependencies
         script: |
@@ -17,7 +16,3 @@ workflows:
           eas build --platform android --profile development --non-interactive
     artifacts:
       - build/**/*.apk
-    cache:
-      paths:
-        - ~/.npm
-        - ~/.expo
