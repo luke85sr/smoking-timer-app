@@ -8,10 +8,9 @@ workflows:
     scripts:
       - name: Install dependencies
         script: npm ci
-      - name: Build APK & AAB
+      - name: Build APK & AAB with EAS
         script: |
-          cd android
-          ./gradlew assembleRelease
+          npx expo install
+          npx eas build --platform android --profile production --non-interactive
     artifacts:
-      - android/app/build/outputs/**/*.apk
-      - android/app/build/outputs/**/*.aab
+      - build/**/*
