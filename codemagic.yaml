@@ -1,22 +1,18 @@
 workflows:
   build-app:
     name: Build APK & AAB with Expo
-    max_build_duration: 60
     environment:
-      node: 18.18.0
-      java: 17
-      vars:
-        EXPO_TOKEN: NKe6AbsLQZh59HSAMZD-I1IOxxpR_EslQn2ZHWD1
+      node: 18
+      npm: 9
+      expo-cli: latest
+      eas-cli: latest
     scripts:
-      - name: Install dependencies
-        script: npm ci
-      - name: Install Expo CLI and EAS CLI
-        script: |
-          npm install -g expo-cli eas-cli
-      - name: Build APK & AAB
-        script: |
-          expo install
-          eas build --platform android --profile production --non-interactive
+      - npm install
+      - eas build -p android --profile production --non-interactive
     artifacts:
-      - build/**/app-*.apk
-      - build/**/app-*.aab
+      - build/**/outputs/**/*.apk
+      - build/**/outputs/**/*.aab
+    publishing:
+      expo:
+        release_channel: production
+        app: luke85sr/SmokingTimer
