@@ -1,16 +1,24 @@
 workflows:
-  build-app:
-    name: Build APK & AAB
-    max_build_duration: 60
+  expo_managed_build:
+    name: Expo Managed Workflow Build
     environment:
       node: 18.18.0
-      java: 17
+      npm: 9.5.1
+      expo_cli_version: latest
     scripts:
       - name: Install dependencies
-        script: npm ci
-      - name: Build APK & AAB with EAS
         script: |
-          npx expo install
-          npx eas build --platform android --profile production --non-interactive
+          npm ci || npm install
+      - name: Install Expo & EAS CLI
+        script: |
+          npm install -g expo-cli eas-cli
+      - name: Run EAS build
+        script: |
+          eas build --platform android --non-interactive
     artifacts:
-      - build/**/*
+      - build/**/*.apk
+      - build/**/*.aab
+    cache:
+      paths:
+        - ~/.npm
+        - ~/.expo
