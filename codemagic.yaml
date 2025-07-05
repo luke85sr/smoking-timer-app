@@ -1,6 +1,6 @@
 workflows:
-  expo_managed_build:
-    name: Expo Managed Workflow Build
+  expo_debug_apk:
+    name: Expo Debug APK Build
     environment:
       node: 18.18.0
       npm: 9.5.1
@@ -12,12 +12,11 @@ workflows:
       - name: Install Expo & EAS CLI
         script: |
           npm install -g expo-cli eas-cli
-      - name: Run EAS build
+      - name: Build APK (debug)
         script: |
-          eas build --platform android --non-interactive
+          eas build --platform android --profile development --non-interactive
     artifacts:
       - build/**/*.apk
-      - build/**/*.aab
     cache:
       paths:
         - ~/.npm
