@@ -5,24 +5,21 @@ workflows:
       node: 18
       npm: 9
       groups:
-        - eas        # il tuo variable group con EXPO_TOKEN / EAS_TOKEN
+        - eas        # <- nome del tuo variable group dove hai messo EAS_TOKEN
 
     scripts:
-      - name: Install npm deps
+      - name: Install dependencies
         script: npm install
 
       - name: Install Expo & EAS CLI
         script: npm install -g expo-cli eas-cli
 
-      # (se usi bare workflow, decommenta questa linea)
+      # se usi bare workflow, decommenta la linea qui sotto:
       # - name: Expo prebuild
       #   script: npx expo prebuild --platform android --no-install
 
-      - name: EAS Build Android
+      - name: Run EAS build
         script: eas build -p android --profile production --non-interactive
-
-      - name: Publish to Expo (opzionale)
-        script: expo publish --release-channel production
 
     artifacts:
       - build/**/outputs/**/*.apk
