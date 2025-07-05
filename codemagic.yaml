@@ -1,18 +1,19 @@
 workflows:
-  expo_debug_apk:
-    name: Expo Debug APK Build
+  build-app:
+    name: Build APK & AAB with Expo
+    max_build_duration: 60
     environment:
       node: 18.18.0
-      npm: 9.5.1
+      java: 17
+      vars:
+        EXPO_TOKEN: NKe6AbsLQZh59HSAMZD-I1IOxxpR_EslQn2ZHWD1
     scripts:
       - name: Install dependencies
+        script: npm ci
+      - name: Build APK & AAB
         script: |
-          npm ci || npm install
-      - name: Install Expo & EAS CLI
-        script: |
-          npm install -g expo-cli eas-cli
-      - name: Build APK (debug)
-        script: |
-          eas build --platform android --profile development --non-interactive
+          npx expo install
+          npx eas build --platform android --profile production --non-interactive
     artifacts:
-      - build/**/*.apk
+      - build/**/app-*.apk
+      - build/**/app-*.aab
