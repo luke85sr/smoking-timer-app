@@ -4,15 +4,13 @@ workflows:
     environment:
       node: 18
       npm: 9
-      expo-cli: latest
-      eas-cli: latest
+      groups:
+        - your-variable-group-name   # <- nome del tuo variable group (dove hai messo EXPO_TOKEN)
     scripts:
       - npm install
-      - eas build -p android --profile production --non-interactive
+      - npm install -g expo-cli eas-cli
+      - eas build -p android --profile production --non-interactive --token $EXPO_TOKEN
+      - expo publish --release-channel production
     artifacts:
       - build/**/outputs/**/*.apk
       - build/**/outputs/**/*.aab
-    publishing:
-      expo:
-        release_channel: production
-        app: luke85sr/SmokingTimer
