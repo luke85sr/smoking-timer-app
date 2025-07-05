@@ -3,11 +3,11 @@ workflows:
     name: Build APK & AAB
     max_build_duration: 60
     environment:
-      node: 18.16.0
+      node: 18.20.2 # ✅ versione Node aggiornata
       java: 17
     scripts:
       - name: Install dependencies
-        script: npm install
+        script: npm ci
       - name: Build APK & AAB
         script: |
           npx expo install
