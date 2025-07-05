@@ -3,15 +3,15 @@ workflows:
     name: Build APK & AAB
     max_build_duration: 60
     environment:
-      node: 18.20.2 # ✅ versione Node aggiornata
+      node: 18.18.0
       java: 17
     scripts:
       - name: Install dependencies
         script: npm ci
       - name: Build APK & AAB
         script: |
-          npx expo install
-          npx eas build --platform android --profile production --non-interactive
+          cd android
+          ./gradlew assembleRelease
     artifacts:
-      - build/**/*.apk
-      - build/**/*.aab
+      - android/app/build/outputs/**/*.apk
+      - android/app/build/outputs/**/*.aab
