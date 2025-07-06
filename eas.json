@@ -1,4 +1,5 @@
 {
+  "projectId": "snack-231da1ed-00ca-47c1-8fea-73171b1bc99d",
   "cli": {
     "version": ">= 6.0.0",
     "appVersionSource": "remote"
@@ -6,23 +7,13 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "android": {
-        "buildType": "apk"
-      }
+      "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal",
-      "android": {
-        "buildType": "apk"
-      }
+      "distribution": "internal"
     },
     "production": {
-      "distribution": "store",
-      "autoIncrement": true,
-      "android": {
-        "buildType": "app-bundle"
-      }
+      "autoIncrement": true
     }
   },
   "submit": {
