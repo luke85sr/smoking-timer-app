@@ -5,7 +5,7 @@ workflows:
       node: 18
       npm: 9
       groups:
-        - eas        # <- nome del tuo variable group dove hai messo EAS_TOKEN
+        - eas        # <- il nome del tuo variable group su Codemagic
 
     scripts:
       - name: Install dependencies
