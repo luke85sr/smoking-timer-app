@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Linking from 'expo-linking';
+import { Linking } from 'react-native';
 
 const PACK_PRICE = 5.30;          // € per pack
 const CIG_PER_PACK = 20;
