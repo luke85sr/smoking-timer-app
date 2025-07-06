@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Smoking Timer",
-    "slug": "snack-231da1ed-00ca-47c1-8fea-73171b1bc99d",
+    "slug": "smoking-timer",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -27,7 +27,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "231da1ed-00ca-47c1-8fea-73171b1bc99d"
+        "projectId": "aaabcc0c-183d-4df9-bacb-19864a572d41"
       }
     }
   }
