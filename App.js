@@ -16,21 +16,21 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const DEFAULT_PACK_PRICE = 5.30;        // prezzo pacchetto di default
-const DEFAULT_CIG_PER_PACK = 20;        // sigarette per pacchetto
-const TIMER_SECONDS = 50 * 60;          // 50 minuti
+const DEFAULT_PACK_PRICE = 5.30;
+const DEFAULT_CIG_PER_PACK = 20;
+const TIMER_SECONDS = 50 * 60;
 
 // contenuti motivazionali
 const items = [
   { type: 'phrase', text: 'Sei più forte di una sigaretta. Ogni respiro è un passo verso la salute!' },
   { type: 'benefit', text: 'In 48h senza fumo, olfatto e gusto migliorano sensibilmente.' },
   { type: 'action', text: 'Fai 5 minuti di stretching per scaricare la tensione 🤸' },
-  { type: 'link', text: '🔥 Hit motivazionale: https://youtu.be/z986ekPOo3M', url: 'https://youtu.be/z986ekPOo3M' },
-  { type: 'link', text: '🎵 Musica live: https://www.youtube.com/live/dnpRUk2be84', url: 'https://www.youtube.com/live/dnpRUk2be84' },
+  { type: 'link', text: '🔥 Hit motivazionale: https://youtu.be/z986ekPOo3M?si=YfM4vzkVYqTOJnYa', url: 'https://youtu.be/z986ekPOo3M?si=YfM4vzkVYqTOJnYa' },
+  { type: 'link', text: '🎵 Musica live: https://www.youtube.com/live/dnpRUk2be84?si=7Ny79yyf7WpFeo-C', url: 'https://www.youtube.com/live/dnpRUk2be84?si=7Ny79yyf7WpFeo-C' },
   { type: 'phrase', text: 'Ogni sigaretta non fumata è un regalo ai tuoi polmoni 🫁' },
 ];
 
-// ISTRUZIONI
+// COMPONENTE ISTRUZIONI
 function InstructionsScreen({ onDone }) {
   return (
     <ScrollView contentContainerStyle={styles.instructionsContainer}>
@@ -54,7 +54,7 @@ function InstructionsScreen({ onDone }) {
   );
 }
 
-// IMPOSTAZIONI
+// COMPONENTE IMPOSTAZIONI
 function SettingsScreen({ onSave }) {
   const [name, setName] = useState('');
   const [cigsDay, setCigsDay] = useState('');
@@ -102,27 +102,30 @@ function SettingsScreen({ onSave }) {
   );
 }
 
-// APP PRINCIPALE
 export default function App() {
+  // splash
   const [loading, setLoading] = useState(true);
+  // istruzioni / settings
   const [seenInstructions, setSeenInstructions] = useState(false);
   const [settings, setSettings] = useState(null);
+  // timer / storico
   const [remaining, setRemaining] = useState(TIMER_SECONDS);
   const [running, setRunning] = useState(false);
   const timerRef = useRef(null);
   const [motivation, setMotivation] = useState(null);
   const [history, setHistory] = useState([]);
   const [summary, setSummary] = useState({});
+  // dark mode
   const systemColor = Appearance.getColorScheme();
   const [manualDark, setManualDark] = useState(false);
   const isDark = manualDark || systemColor === 'dark';
 
-  // Splash 2s
+  // splash 2s
   useEffect(() => {
     setTimeout(() => setLoading(false), 2000);
   }, []);
 
-  // Caricamento iniziale
+  // carica flags e dati
   useEffect(() => {
     (async () => {
       const si = await AsyncStorage.getItem('seenInstructions');
@@ -134,18 +137,24 @@ export default function App() {
     })();
   }, []);
 
-  // Persiste settings e storico
+  // persisti settings
   useEffect(() => {
-    if (settings) AsyncStorage.setItem('appSettings', JSON.stringify(settings));
+    if (settings) {
+      AsyncStorage.setItem('appSettings', JSON.stringify(settings));
+    }
   }, [settings]);
+
+  // persisti storico + summary
   useEffect(() => {
     AsyncStorage.setItem('history', JSON.stringify(history));
     const sums = {};
-    history.forEach(e => { sums[e.date] = (sums[e.date] || 0) + 1; });
+    history.forEach(e => {
+      sums[e.date] = (sums[e.date] || 0) + 1;
+    });
     setSummary(sums);
   }, [history]);
 
-  // Timer persistente
+  // timer persistente
   useEffect(() => {
     if (running) {
       AsyncStorage.setItem('timerStart', Date.now().toString());
@@ -165,7 +174,7 @@ export default function App() {
     return () => clearInterval(timerRef.current);
   }, [running]);
 
-  // Handlers
+  // handers
   const handleDoneInstructions = async () => {
     await AsyncStorage.setItem('seenInstructions', 'true');
     setSeenInstructions(true);
@@ -177,32 +186,32 @@ export default function App() {
     const now = new Date();
     setHistory([{
       date: now.toLocaleDateString(),
-      time: now.toLocaleTimeString().slice(0, 5),
+      time: now.toLocaleTimeString().slice(0,5),
       cost: (settings?.packPrice ?? DEFAULT_PACK_PRICE) / DEFAULT_CIG_PER_PACK
     }, ...history]);
     setRemaining(TIMER_SECONDS);
     setRunning(true);
   };
-  const handleReset = async () => {
-    Alert.alert('Reset app', 'Vuoi cancellare tutte le impostazioni e storico?', [
+  const handleReset = () => {
+    Alert.alert('Reset app', 'Vuoi cancellare impostazioni e storico?', [
       { text: 'Annulla' },
       { text: 'Resetta', style: 'destructive', onPress: async () => {
-        await AsyncStorage.multiRemove(['seenInstructions','appSettings','history','timerStart']);
-        setSeenInstructions(false);
-        setSettings(null);
-        setHistory([]);
-        setRunning(false);
-        setRemaining(TIMER_SECONDS);
-      }}
+          await AsyncStorage.multiRemove(['seenInstructions','appSettings','history','timerStart']);
+          setSeenInstructions(false);
+          setSettings(null);
+          setHistory([]);
+          setRunning(false);
+          setRemaining(TIMER_SECONDS);
+        }}
     ]);
   };
 
-  // Format timer
-  const mm = String(Math.floor(remaining / 60)).padStart(2, '0');
-  const ss = String(remaining % 60).padStart(2, '0');
+  // format timer
+  const mm = String(Math.floor(remaining/60)).padStart(2,'0');
+  const ss = String(remaining%60).padStart(2,'0');
   const timerText = `${mm}:${ss}`;
 
-  // Rendering
+  // render
   if (loading) {
     return (
       <LinearGradient colors={['#A8E6CF','#FFFFFF','#D0F0FD']} style={styles.splash}>
@@ -212,7 +221,7 @@ export default function App() {
     );
   }
   if (!seenInstructions) return <InstructionsScreen onDone={handleDoneInstructions} />;
-  if (!settings)       return <SettingsScreen   onSave={handleSaveSettings} />;
+  if (!settings)       return <SettingsScreen    onSave={handleSaveSettings} />;
 
   return (
     <LinearGradient
@@ -229,4 +238,87 @@ export default function App() {
         </TouchableOpacity>
       </View>
 
-      <Text style={[styles.timer, isDark ? styles.timerDark : styles
+      <Text style={[styles.timer, isDark ? styles.timerDark : styles.timerLight]}>
+        {timerText}
+      </Text>
+      <TouchableOpacity
+        style={[styles.button, isDark ? styles.buttonDark : styles.buttonLight]}
+        onPress={() => running ? setRunning(false) : handleSmoke()}
+      >
+        <Text style={styles.buttonText}>
+          {running ? 'FERMA ⏸' : 'STO FUMANDO 🚬'}
+        </Text>
+      </TouchableOpacity>
+
+      {motivation && motivation.type === 'link' && (
+        <Text style={styles.link} onPress={()=>Linking.openURL(motivation.url)}>
+          {motivation.text}
+        </Text>
+      )}
+      {motivation && motivation.type !== 'link' && (
+        <Text style={styles.motivation}>{motivation.text}</Text>
+      )}
+
+      <Text style={[styles.section, isDark && styles.darkText]}>🕒 Dettaglio fumo</Text>
+      <View style={styles.historyContainer}>
+        <FlatList
+          data={history}
+          keyExtractor={(_,i)=>String(i)}
+          renderItem={({item})=>(
+            <View style={styles.entry}>
+              <Text style={[styles.entryText, isDark && styles.darkText]}>
+                {item.date} {item.time} – €{item.cost.toFixed(2)}
+              </Text>
+            </View>
+          )}
+        />
+      </View>
+
+      <Text style={[styles.section, isDark && styles.darkText]}>📊 Riepilogo giornaliero</Text>
+      <ScrollView style={styles.summaryContainer}>
+        {Object.entries(summary).map(([day,c])=>(
+          <Text key={day} style={[styles.summaryText, isDark && styles.darkText]}>
+            {day}: {c} sigarette
+          </Text>
+        ))}
+      </ScrollView>
+    </LinearGradient>
+  );
+}
+
+const styles = StyleSheet.create({
+  splash:            { flex:1,justifyContent:'center',alignItems:'center' },
+  splashText:        { marginTop:20,fontSize:28,fontWeight:'bold',color:'#004d40' },
+  container:         { flex:1,padding:16 },
+  topBar:            { flexDirection:'row',justifyContent:'space-between',alignItems:'center' },
+  switchRow:         { flexDirection:'row',alignItems:'center' },
+  switchLabel:       { fontSize:20,marginRight:4 },
+  resetText:         { color:'#c00',fontWeight:'bold' },
+  darkText:          { color:'#0f0' },
+  timer:             { fontSize:48,textAlign:'center',marginVertical:8 },
+  timerLight:        { color:'#004d40' },
+  timerDark:         { color:'#00FF00' },
+  button:            { padding:12,borderRadius:8,alignItems:'center',marginVertical:10 },
+  buttonLight:       { backgroundColor:'#00796b' },
+  buttonDark:        { backgroundColor:'#004d40' },
+  buttonText:        { color:'#fff',fontSize:20,fontWeight:'bold' },
+  motivation:        { fontSize:18,fontStyle:'italic',textAlign:'center',marginVertical:8,color:'#f57f17' },
+  link:              { fontSize:18,textAlign:'center',marginVertical:8,color:'#0066cc',textDecorationLine:'underline' },
+  section:           { fontSize:20,fontWeight:'bold',marginTop:12,textAlign:'center',color:'#004d40' },
+  historyContainer:  { flex:1,marginVertical:4 },
+  entry:             { borderBottomWidth:1,borderBottomColor:'#ccc',paddingVertical:4 },
+  entryText:         { fontSize:16,color:'#333' },
+  summaryContainer:  { maxHeight:120,marginVertical:4 },
+  summaryText:       { fontSize:18,marginVertical:2,color:'#333' },
+  instructionsContainer:{ padding:20 },
+  instructionsTitle: { fontSize:24,fontWeight:'bold',textAlign:'center',marginBottom:12 },
+  instructionsText:  { fontSize:16,lineHeight:24 },
+  instructionsButton:{ marginTop:20,backgroundColor:'#00796b',padding:12,borderRadius:6,alignSelf:'center' },
+  instructionsButtonText:{ color:'#fff',fontSize:18 },
+  settingsContainer: { padding:20 },
+  settingsTitle:     { fontSize:22,fontWeight:'bold',marginBottom:12,textAlign:'center' },
+  input:             { borderWidth:1,borderColor:'#888',padding:8,borderRadius:4,marginVertical:6 },
+  settingsButton:    { marginTop:12,backgroundColor:'#00796b',padding:10,borderRadius:6,alignItems:'center' },
+  settingsButtonText:{ color:'#fff',fontSize:16 },
+});
+
