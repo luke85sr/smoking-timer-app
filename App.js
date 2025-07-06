@@ -41,7 +41,7 @@ function InstructionsScreen({ onDone }) {
         Dopo aver impostato i dati iniziali clicca “STO FUMANDO” all'accensione della sigaretta,
         vedrai un timer di 50 minuti di base, questo si allungherà nel tempo in modo da fumare meno.
         {'\n\n'}
-        Al termine del timer potrai fumare nuovamente o prolungare la pausa come preferisci.
+        Al termine del timer potrai fumare nuovamente.
         {'\n\n'}
         Troverai un report quotidiano ed uno totale che ti segnalerà giorno per giorno i miglioramenti.
         {'\n\n'}
@@ -176,10 +176,12 @@ export default function App() {
     const it = items[Math.floor(Math.random() * items.length)];
     setMotivation(it);
     const now = new Date();
+    // costo calcolato sempre su DEFAULT_CIG_PER_PACK
+    const costPerCig = (settings?.packPrice ?? DEFAULT_PACK_PRICE) / DEFAULT_CIG_PER_PACK;
     setHistory([{
       date: now.toLocaleDateString(),
       time: now.toLocaleTimeString().slice(0,5),
-      cost: (settings?.packPrice ?? DEFAULT_PACK_PRICE) / (settings?.cigsPerDay ?? DEFAULT_CIG_PER_PACK)
+      cost: costPerCig
     }, ...history]);
     setRemaining(TIMER_SECONDS);
     setRunning(true);
@@ -197,7 +199,7 @@ export default function App() {
       }}]);
   };
 
-  // format
+  // format timer
   const mm = String(Math.floor(remaining/60)).padStart(2,'0');
   const ss = String(remaining%60).padStart(2,'0');
   const timerText = `${mm}:${ss}`;
@@ -221,19 +223,19 @@ export default function App() {
     >
       <View style={styles.topBar}>
         <View style={styles.switchRow}>
-          <Text style={[styles.switchLabel,isDark&&styles.darkText]}>🌙</Text>
+          <Text style={[styles.switchLabel,isDark && styles.darkText]}>🌙</Text>
           <Switch value={isDark} onValueChange={setManualDark} />
         </View>
         <TouchableOpacity onPress={handleReset}>
-          <Text style={[styles.resetText,isDark&&styles.darkText]}>RESET</Text>
+          <Text style={[styles.resetText,isDark && styles.darkText]}>RESET</Text>
         </TouchableOpacity>
       </View>
 
-      <Text style={[styles.timer, isDark?styles.timerDark:styles.timerLight]}>
+      <Text style={[styles.timer, isDark ? styles.timerDark : styles.timerLight]}>
         {timerText}
       </Text>
       <TouchableOpacity
-        style={[styles.button, isDark?styles.buttonDark:styles.buttonLight]}
+        style={[styles.button, isDark ? styles.buttonDark : styles.buttonLight]}
         onPress={() => running ? setRunning(false) : handleSmoke()}
       >
         <Text style={styles.buttonText}>
@@ -241,23 +243,23 @@ export default function App() {
         </Text>
       </TouchableOpacity>
 
-      {motivation && motivation.type==='link' && (
-        <Text style={styles.link} onPress={()=>Linking.openURL(motivation.url)}>
+      {motivation && motivation.type === 'link' && (
+        <Text style={styles.link} onPress={() => Linking.openURL(motivation.url)}>
           {motivation.text}
         </Text>
       )}
-      {motivation && motivation.type!=='link' && (
+      {motivation && motivation.type !== 'link' && (
         <Text style={styles.motivation}>{motivation.text}</Text>
       )}
 
-      <Text style={[styles.section, isDark&&styles.darkText]}>🕒 Dettaglio fumo</Text>
+      <Text style={[styles.section, isDark && styles.darkText]}>🕒 Dettaglio fumo</Text>
       <View style={styles.historyContainer}>
         <FlatList
           data={history}
-          keyExtractor={(_,i)=>String(i)}
-          renderItem={({item})=>(
+          keyExtractor={(_,i) => String(i)}
+          renderItem={({item}) => (
             <View style={styles.entry}>
-              <Text style={[styles.entryText, isDark&&styles.darkText]}>
+              <Text style={[styles.entryText, isDark && styles.darkText]}>
                 {item.date} {item.time} – €{item.cost.toFixed(2)}
               </Text>
             </View>
@@ -265,10 +267,10 @@ export default function App() {
         />
       </View>
 
-      <Text style={[styles.section, isDark&&styles.darkText]}>📊 Riepilogo giornaliero</Text>
+      <Text style={[styles.section, isDark && styles.darkText]}>📊 Riepilogo giornaliero</Text>
       <ScrollView style={styles.summaryContainer}>
-        {Object.entries(summary).map(([day,c])=>(
-          <Text key={day} style={[styles.summaryText, isDark&&styles.darkText]}>
+        {Object.entries(summary).map(([day,c]) => (
+          <Text key={day} style={[styles.summaryText, isDark && styles.darkText]}>
             {day}: {c} sigarette
           </Text>
         ))}
@@ -278,49 +280,49 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  splash: { flex:1,justifyContent:'center',alignItems:'center' },
-  splashText:{ marginTop:20,fontSize:28,fontWeight:'bold',color:'#004d40' },
+  splash:      { flex:1,justifyContent:'center',alignItems:'center' },
+  splashText:  { marginTop:20,fontSize:28,fontWeight:'bold',color:'#004d40' },
 
-  container:{
+  container:       {
     flex:1,
-    paddingTop: 40,       // <-- spaziatura aggiunta
-    paddingHorizontal:16, // margini laterali
+    paddingTop: 60,    // ← aumentato da 40 a 60
+    paddingHorizontal:16
   },
-  topBar:{ flexDirection:'row',justifyContent:'space-between',alignItems:'center' },
-  switchRow:{ flexDirection:'row',alignItems:'center' },
-  switchLabel:{ fontSize:20,marginRight:4 },
-  resetText:{ color:'#c00',fontWeight:'bold' },
-  darkText:{ color:'#0f0' },
+  topBar:          { flexDirection:'row',justifyContent:'space-between',alignItems:'center' },
+  switchRow:       { flexDirection:'row',alignItems:'center' },
+  switchLabel:     { fontSize:20,marginRight:4 },
+  resetText:       { color:'#c00',fontWeight:'bold' },
+  darkText:        { color:'#0f0' },
 
-  timer:{ fontSize:48,textAlign:'center',marginVertical:8 },
-  timerLight:{ color:'#004d40' },
-  timerDark:{ color:'#00FF00' },
+  timer:           { fontSize:48,textAlign:'center',marginVertical:8 },
+  timerLight:      { color:'#004d40' },
+  timerDark:       { color:'#00FF00' },
 
-  button:{ padding:12,borderRadius:8,alignItems:'center',marginVertical:10 },
-  buttonLight:{ backgroundColor:'#00796b' },
-  buttonDark:{ backgroundColor:'#004d40' },
-  buttonText:{ color:'#fff',fontSize:20,fontWeight:'bold' },
+  button:          { padding:12,borderRadius:8,alignItems:'center',marginVertical:10 },
+  buttonLight:     { backgroundColor:'#00796b' },
+  buttonDark:      { backgroundColor:'#004d40' },
+  buttonText:      { color:'#fff',fontSize:20,fontWeight:'bold' },
 
-  motivation:{ fontSize:18,fontStyle:'italic',textAlign:'center',marginVertical:8,color:'#f57f17' },
-  link:{ fontSize:18,textAlign:'center',marginVertical:8,color:'#0066cc',textDecorationLine:'underline' },
+  motivation:      { fontSize:18,fontStyle:'italic',textAlign:'center',marginVertical:8,color:'#f57f17' },
+  link:            { fontSize:18,textAlign:'center',marginVertical:8,color:'#0066cc',textDecorationLine:'underline' },
 
-  section:{ fontSize:20,fontWeight:'bold',marginTop:12,textAlign:'center',color:'#004d40' },
+  section:         { fontSize:20,fontWeight:'bold',marginTop:12,textAlign:'center',color:'#004d40' },
   historyContainer:{ flex:1,marginVertical:4 },
-  entry:{ borderBottomWidth:1,borderBottomColor:'#ccc',paddingVertical:4 },
-  entryText:{ fontSize:16,color:'#333' },
+  entry:           { borderBottomWidth:1,borderBottomColor:'#ccc',paddingVertical:4 },
+  entryText:       { fontSize:16,color:'#333' },
 
   summaryContainer:{ maxHeight:120,marginVertical:4 },
-  summaryText:{ fontSize:18,marginVertical:2,color:'#333' },
+  summaryText:     { fontSize:18,marginVertical:2,color:'#333' },
 
-  instructionsContainer:{ padding:20 },
-  instructionsTitle:{ fontSize:24,fontWeight:'bold',textAlign:'center',marginBottom:12 },
-  instructionsText:{ fontSize:16,lineHeight:24 },
-  instructionsButton:{ marginTop:20,backgroundColor:'#00796b',padding:12,borderRadius:6,alignSelf:'center' },
-  instructionsButtonText:{ color:'#fff',fontSize:18 },
+  instructionsContainer:    { padding:20 },
+  instructionsTitle:        { fontSize:24,fontWeight:'bold',textAlign:'center',marginBottom:12 },
+  instructionsText:         { fontSize:16,lineHeight:24 },
+  instructionsButton:       { marginTop:20,backgroundColor:'#00796b',padding:12,borderRadius:6,alignSelf:'center' },
+  instructionsButtonText:   { color:'#fff',fontSize:18 },
 
-  settingsContainer:{ padding:20 },
-  settingsTitle:{ fontSize:22,fontWeight:'bold',marginBottom:12,textAlign:'center' },
-  input:{ borderWidth:1,borderColor:'#888',padding:8,borderRadius:4,marginVertical:6 },
-  settingsButton:{ marginTop:12,backgroundColor:'#00796b',padding:10,borderRadius:6,alignItems:'center' },
-  settingsButtonText:{ color:'#fff',fontSize:16 },
+  settingsContainer:        { padding:20 },
+  settingsTitle:            { fontSize:22,fontWeight:'bold',marginBottom:12,textAlign:'center' },
+  input:                    { borderWidth:1,borderColor:'#888',padding:8,borderRadius:4,marginVertical:6 },
+  settingsButton:           { marginTop:12,backgroundColor:'#00796b',padding:10,borderRadius:6,alignItems:'center' },
+  settingsButtonText:       { color:'#fff',fontSize:16 },
 });
