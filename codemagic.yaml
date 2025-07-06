@@ -4,21 +4,23 @@ workflows:
     environment:
       node: 18
       npm: 9
-      groups:
-        - eas        # <- il nome del tuo variable group su Codemagic
+      # dichiariamo il nostro secret EXPO_TOKEN
+      secrets:
+        - EXPO_TOKEN
 
     scripts:
       - name: Install dependencies
         script: npm install
 
-      - name: Install Expo & EAS CLI
-        script: npm install -g expo-cli eas-cli
+      - name: Install EAS CLI
+        script: npm install -g eas-cli
 
-      # se usi bare workflow, decommenta la linea qui sotto:
+      # se usi bare workflow, decommenta:
       # - name: Expo prebuild
       #   script: npx expo prebuild --platform android --no-install
 
       - name: Run EAS build
+        # EAS cercherà la variabile EXPO_TOKEN in ambiente
         script: eas build -p android --profile production --non-interactive
 
     artifacts:
