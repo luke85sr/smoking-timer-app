@@ -1,11 +1,11 @@
 workflows:
   build-app:
-    name: Build APK & AAB with EAS
+    name: Build & Download with EAS
     environment:
       node: 18
       npm: 9
       groups:
-        - eas
+        - eas   # contiene EXPO_TOKEN
 
     scripts:
       - name: Install dependencies
@@ -14,13 +14,23 @@ workflows:
       - name: Install EAS CLI
         script: npm install -g eas-cli
 
-      - name: Run EAS build & download artifacts
+      - name: Run EAS build
         script: |
           eas build \
             --platform android \
             --profile production \
-            --non-interactive \
-            --output ./build
+            --non-interactive
+
+      - name: Download APK/AAB artifact
+        script: |
+          mkdir -p build
+          # Recupera l'URL dell'ultimo artefatto Android
+          URL=$(eas build:list --json --limit 1 --platform android \
+            | node -pe "JSON.parse(require('fs').readFileSync(0))[0].artifacts.buildUrl")
+          # Estrai l’estensione (.apk o .aab)
+          EXT="${URL##*.}"
+          # Scarica l’artefatto nella cartella build
+          curl -L "$URL" -o "build/app.$EXT"
 
     artifacts:
       - build/*.apk
