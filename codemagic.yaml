@@ -1,27 +1,22 @@
 workflows:
   build-app:
-    name: Build APK & AAB with Expo
+    name: Build APK with classic Expo
     environment:
       node: 18
       npm: 9
       groups:
-        - eas       # importa qui il tuo gruppo "eas" con dentro EXPO_TOKEN
+        - eas       # il tuo gruppo con dentro EXPO_TOKEN (serve per installare eventuali CLI)
+    max_build_duration: 30  # timeout in minuti, puoi aggiustare se serve più tempo
 
     scripts:
       - name: Install dependencies
         script: npm install
 
-      - name: Install EAS CLI
-        script: npm install -g eas-cli
+      - name: Install Expo CLI
+        script: npm install -g expo-cli
 
-      # se usi bare workflow, decommenta:
-      # - name: Expo prebuild
-      #   script: npx expo prebuild --platform android --no-install
-
-      - name: Run EAS build
-        # EAS CLI userà automaticamente il token preso da $EXPO_TOKEN
-        script: eas build -p android --profile production --non-interactive
+      - name: Run classic Expo build
+        script: npx expo build:android --no-publish --no-wait
 
     artifacts:
-      - build/**/outputs/**/*.apk
-      - build/**/outputs/**/*.aab
+      - android/app/build/outputs/**/*.apk
