@@ -4,19 +4,19 @@ workflows:
     environment:
       node: 18
       npm: 9
-      groups:
-        - eas       # il tuo gruppo con dentro EXPO_TOKEN (serve per installare eventuali CLI)
-    max_build_duration: 30  # timeout in minuti, puoi aggiustare se serve più tempo
+      # non serve più il gruppo “eas” né EXPO_TOKEN
+    max_build_duration: 30  # min
 
     scripts:
       - name: Install dependencies
         script: npm install
 
-      - name: Install Expo CLI
-        script: npm install -g expo-cli
+      - name: Install legacy Expo CLI
+        script: npm install -g expo-cli@^4
 
       - name: Run classic Expo build
-        script: npx expo build:android --no-publish --no-wait
+        script: expo-cli build:android -t apk --no-publish --non-interactive
 
     artifacts:
-      - android/app/build/outputs/**/*.apk
+      # il builder classico deposita gli apk in ./dist
+      - dist/**/*.apk
