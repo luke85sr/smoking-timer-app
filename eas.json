@@ -1,17 +1,21 @@
 {
   "cli": {
-    "version": ">= 6.0.0"
+    "version": ">= 6.0.0",
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "projectId": "aaabcc0c-183d-4df9-bacb-19864a572d41"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "projectId": "aaabcc0c-183d-4df9-bacb-19864a572d41"
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "projectId": "aaabcc0c-183d-4df9-bacb-19864a572d41"
     }
   }
 }
