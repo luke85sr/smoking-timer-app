@@ -14,10 +14,7 @@ workflows:
       - name: Install EAS CLI
         script: npm install -g eas-cli
 
-      - name: Login to EAS
-        script: |
-          # se EXPO_TOKEN è già in env var questo fa il login
-          eas login --token $EXPO_TOKEN
+      # ❌ RIMOSSO: Login to EAS con --token
 
       - name: Run EAS build
         script: |
@@ -28,7 +25,6 @@ workflows:
 
       - name: Download build artifacts
         script: |
-          # scarica l'ultimo build completato per Android
           eas build:download \
             --platform android \
             --latest \
