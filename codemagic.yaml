@@ -5,7 +5,7 @@ workflows:
       node: 18
       npm: 9
       groups:
-        - eas
+        - eas   # deve contenere EXPO_TOKEN
 
     scripts:
       - name: Install dependencies
@@ -24,14 +24,13 @@ workflows:
       - name: Download APK/AAB artifact
         script: |
           mkdir -p build
-          # Estrae l'URL dal JSON (anche se qualche riga extra viene emessa)
+          # Estrae l'URL dal JSON prodotto da `eas build:list`
           URL=$(eas build:list \
             --json \
             --limit 1 \
             --platform android \
-            --non-interactive \
-            | grep -Po '"buildUrl":\s*"\K[^"]+')
-          # Prende l'estensione (.apk o .aab)
+            --non-interactive 2>/dev/null \
+            | sed -n 's/.*"buildUrl":[[:space:]]*"\([^"]*\)".*/\1/p')
           EXT="${URL##*.}"
           echo "Scarico artefatto da $URL"
           curl -L "$URL" -o "build/app.$EXT"
