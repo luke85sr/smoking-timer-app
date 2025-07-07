@@ -5,7 +5,7 @@ workflows:
       node: 18
       npm: 9
       groups:
-        - eas   # deve contenere EXPO_TOKEN
+        - eas
 
     scripts:
       - name: Install dependencies
@@ -14,20 +14,12 @@ workflows:
       - name: Install EAS CLI
         script: npm install -g eas-cli
 
-      # ❌ RIMOSSO: Login to EAS con --token
-
-      - name: Run EAS build
+      - name: Run EAS build & download artifacts
         script: |
           eas build \
             --platform android \
             --profile production \
-            --non-interactive
-
-      - name: Download build artifacts
-        script: |
-          eas build:download \
-            --platform android \
-            --latest \
+            --non-interactive \
             --output ./build
 
     artifacts:
