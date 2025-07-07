@@ -1,27 +1,40 @@
 workflows:
   build-app:
-    name: Build APK & AAB with Expo
+    name: Build APK & AAB with EAS
     environment:
       node: 18
       npm: 9
       groups:
-        - eas        # qui viene caricato il group “eas” con EXPO_TOKEN
+        - eas   # deve contenere EXPO_TOKEN
 
     scripts:
       - name: Install dependencies
-        script: npm install
+        script: npm ci
 
       - name: Install EAS CLI
         script: npm install -g eas-cli
 
-      # se usi bare workflow, decommenta:
-      # - name: Expo prebuild
-      #   script: npx expo prebuild --platform android --no-install
+      - name: Login to EAS
+        script: |
+          # se EXPO_TOKEN è già in env var questo fa il login
+          eas login --token $EXPO_TOKEN
 
       - name: Run EAS build
-        # EAS CLI userà automaticamente il token $EXPO_TOKEN
-        script: eas build -p android --profile production --non-interactive
+        script: |
+          eas build \
+            --platform android \
+            --profile production \
+            --non-interactive
+
+      - name: Download build artifacts
+        script: |
+          # scarica l'ultimo build completato per Android
+          eas build:download \
+            --platform android \
+            --latest \
+            --output ./build
 
     artifacts:
-      - build/**/outputs/**/*.apk
-      - build/**/outputs/**/*.aab
+      - build/*.apk
+      - build/*.aab
+
