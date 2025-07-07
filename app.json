@@ -1,34 +1,37 @@
 {
-  "expo": {
-    "name": "Smoking Timer",
-    "slug": "smoking-timer",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
+  "name": "Smoking Timer",
+  "slug": "snack-231da1ed-00ca-47c1-8fea-73171b1bc99d",
+  "version": "1.0.0",
+  "orientation": "portrait",
+  "icon": "./assets/icon.png",
+  "userInterfaceStyle": "light",
+  "splash": {
+    "image": "./assets/splash-icon.png",
+    "resizeMode": "contain",
+    "backgroundColor": "#ffffff"
+  },
+  "ios": {
+    "supportsTablet": true
+  },
+  "android": {
+    "adaptiveIcon": {
+      "foregroundImage": "./assets/adaptive-icon.png",
       "backgroundColor": "#ffffff"
     },
-    "ios": {
-      "supportsTablet": true
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "package": "com.luke85sr.smokingtimer",
-      "permissions": ["NOTIFICATIONS"]
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "aaabcc0c-183d-4df9-bacb-19864a572d41"
-      }
+    "edgeToEdgeEnabled": true,
+    "package": "com.luke85sr.smokingtimer"
+  },
+  "web": {
+    "favicon": "./assets/favicon.png"
+  },
+  "extra": {
+    "eas": {
+      "projectId": "aaabcc0c-183d-4df9-bacb-19864a572d41"
     }
-  }
+  },
+  "sdkVersion": "53.0.0",
+  "platforms": [
+    "ios",
+    "android"
+  ]
 }
