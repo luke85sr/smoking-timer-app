@@ -1,3 +1,4 @@
+// App.js
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -13,27 +14,45 @@ import {
   Alert,
   Linking,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-
-// **QUI** import per Notifications
 import * as Notifications from 'expo-notifications';
+import { runSql } from './database';
 
-const DEFAULT_PACK_PRICE = 5.30;
-const DEFAULT_CIG_PER_PACK = 20;
-const TIMER_SECONDS = 50 * 60;
+const DEFAULT_PACK_PRICE    = 5.30;
+const DEFAULT_CIG_PER_PACK  = 20;
+const TIMER_SECONDS_DEFAULT = 40 * 60;   // 40 minuti in secondi
+const INCREMENT_DAYS        = 5;         // ogni 5 giorni
+const INCREMENT_SECONDS     = 10 * 60;   // aggiunge 10 minuti in secondi
 
-// mix of motivational content
 const items = [
   { type: 'phrase', text: 'Sei più forte di una sigaretta. Ogni respiro è un passo verso la salute!' },
   { type: 'benefit', text: 'In 48h senza fumo, olfatto e gusto migliorano sensibilmente.' },
   { type: 'action', text: 'Fai 5 minuti di stretching per scaricare la tensione 🤸' },
-  { type: 'link',  text: '🔥 Hit motivazionale: https://youtu.be/z986ekPOo3M?si=YfM4vzkVYqTOJnYa', url: 'https://youtu.be/z986ekPOo3M?si=YfM4vzkVYqTOJnYa' },
-  { type: 'link',  text: '🎵 Musica live: https://www.youtube.com/live/dnpRUk2be84?si=7Ny79yyf7WpFeo-C', url: 'https://www.youtube.com/live/dnpRUk2be84?si=7Ny79yyf7WpFeo-C' },
+  { type: 'link',   text: '🔥 Hit motivazionale: https://youtu.be/z986ekPOo3M', url: 'https://youtu.be/z986ekPOo3M' },
+  { type: 'link',   text: '🎵 Musica live: https://www.youtube.com/live/dnpRUk2be84', url: 'https://www.youtube.com/live/dnpRUk2be84' },
   { type: 'phrase', text: 'Ogni sigaretta non fumata è un regalo ai tuoi polmoni 🫁' },
 ];
 
-// COMPONENTE ISTRUZIONI
+// Gestione notifiche in primo piano
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false
+  })
+});
+
+// Pianifica notifica dopo `secondsFromNow` secondi
+async function scheduleEndNotification(secondsFromNow) {
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: '⏰ Tempo finito!',
+      body: 'Puoi fumare ora.',
+    },
+    trigger: { seconds: secondsFromNow, repeats: false },
+  });
+}
+
 function InstructionsScreen({ onDone }) {
   return (
     <ScrollView contentContainerStyle={styles.instructionsContainer}>
@@ -41,12 +60,10 @@ function InstructionsScreen({ onDone }) {
       <Text style={styles.instructionsText}>
         L'applicazione ti aiuterà ad allungare il tempo di attesa tra una sigaretta e l'altra.
         {'\n\n'}
-        Dopo aver impostato i dati iniziali clicca “STO FUMANDO” all'accensione della sigaretta,
-        vedrai un timer di 50 minuti di base, questo si allungherà nel tempo in modo da fumare meno.
+        Dopo aver impostato i dati iniziali clicca “STO FUMANDO” all’accensione della sigaretta,
+        vedrai un timer di base di 40 minuti che cresce di 10 min ogni 5 giorni di utilizzo.
         {'\n\n'}
-        Al termine del timer potrai fumare nuovamente.
-        {'\n\n'}
-        Troverai un report quotidiano ed uno totale che ti segnalerà giorno per giorno i miglioramenti.
+        Troverai un report quotidiano e uno totale che ti segnalerà giorno per giorno i miglioramenti.
         {'\n\n'}
         Buona fortuna e dacci dentro, CI RIUSCIRAI!
       </Text>
@@ -57,280 +74,256 @@ function InstructionsScreen({ onDone }) {
   );
 }
 
-// COMPONENTE IMPOSTAZIONI
 function SettingsScreen({ onSave }) {
-  const [name, setName] = useState('');
-  const [cigsDay, setCigsDay] = useState('');
-  const [packPrice, setPackPrice] = useState('');
+  const [name,     setName]      = useState('');
+  const [cigsDay,  setCigsDay]   = useState('');
+  const [packPrice,setPackPrice] = useState('');
 
   const handleSave = () => {
     if (!name || !cigsDay || !packPrice) {
-      Alert.alert('Attenzione', 'Compila tutti i campi prima di continuare.');
+      Alert.alert('Attenzione', 'Compila tutti i campi.');
       return;
     }
     onSave({
       name,
       cigsPerDay: parseInt(cigsDay, 10),
       packPrice: parseFloat(packPrice.replace(',', '.')),
+      startDate: Date.now(),
     });
   };
 
   return (
     <View style={styles.settingsContainer}>
       <Text style={styles.settingsTitle}>Impostazioni iniziali</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Il tuo nome"
-        value={name}
-        onChangeText={setName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Sigarette al giorno (es. 20)"
-        keyboardType="numeric"
-        value={cigsDay}
-        onChangeText={setCigsDay}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Prezzo pacchetto (€)"
-        keyboardType="decimal-pad"
-        value={packPrice}
-        onChangeText={setPackPrice}
-      />
+      <TextInput style={styles.input} placeholder="Il tuo nome" value={name} onChangeText={setName}/>
+      <TextInput style={styles.input} placeholder="Sigarette al giorno" keyboardType="numeric" value={cigsDay} onChangeText={setCigsDay}/>
+      <TextInput style={styles.input} placeholder="Prezzo pacchetto (€)" keyboardType="decimal-pad" value={packPrice} onChangeText={setPackPrice}/>
       <TouchableOpacity style={styles.settingsButton} onPress={handleSave}>
-        <Text style={styles.settingsButtonText}>Salva impostazioni</Text>
+        <Text style={styles.settingsButtonText}>Salva</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 export default function App() {
-  // splash + preload
-  const [loading, setLoading] = useState(true);
-  const [appIsReady, setAppIsReady] = useState(false);
-
-  // walkthrough
-  const [seenInstructions, setSeenInstructions] = useState(false);
-  const [settings, setSettings] = useState(null);
-
-  // timer + history
-  const [remaining, setRemaining] = useState(TIMER_SECONDS);
-  const [running, setRunning] = useState(false);
-  const timerRef = useRef(null);
-  const [motivation, setMotivation] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [summary, setSummary] = useState({});
-
-  // dark mode
+  const [loading,         setLoading]          = useState(true);
+  const [seenInstructions,setSeenInstructions] = useState(false);
+  const [settings,        setSettings]         = useState(null);
+  const [remaining,       setRemaining]        = useState(0);
+  const [running,         setRunning]          = useState(false);
+  const [motivation,      setMotivation]       = useState(null);
+  const [history,         setHistory]          = useState([]);
+  const [summary,         setSummary]          = useState({});
   const systemColor = Appearance.getColorScheme();
-  const [manualDark, setManualDark] = useState(false);
+  const [manualDark,      setManualDark]       = useState(false);
   const isDark = manualDark || systemColor === 'dark';
 
-  // ---- EFFECTS ----
-
-  // 1) splash 4s
-  useEffect(() => {
-    setTimeout(() => setLoading(false), 4000);
-  }, []);
-
-  // 2) preload + notifiche
+  // 1) Chiedo permesso notifiche, poi inizializzo il DB e carico dati
   useEffect(() => {
     (async () => {
-      // chiedi permesso notifiche
-      const { status } = await Notifications.getPermissionsAsync();
+      // Richiesta permessi notifiche
+      const { status } = await Notifications.requestPermissionsAsync();
       if (status !== 'granted') {
-        await Notifications.requestPermissionsAsync();
+        Alert.alert(
+          'Permessi notifiche negati',
+          'Per ricevere gli avvisi di fine timer abilita le notifiche nelle impostazioni dell’app.'
+        );
       }
 
-      // seenInstructions
-      const si = await AsyncStorage.getItem('seenInstructions');
-      setSeenInstructions(si === 'true');
+      try {
+        await runSql(`CREATE TABLE IF NOT EXISTS meta(
+          key TEXT PRIMARY KEY, value TEXT
+        )`);
+        await runSql(`CREATE TABLE IF NOT EXISTS history(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          date TEXT, time TEXT, cost REAL
+        )`);
 
-      // settings
-      const js = await AsyncStorage.getItem('appSettings');
-      if (js) setSettings(JSON.parse(js));
+        // Leggi meta
+        const metaResult = await runSql(`SELECT * FROM meta`);
+        const metaArr    = metaResult.rows._array;
+        const meta       = Object.fromEntries(metaArr.map(r => [r.key, r.value]));
 
-      // history
-      const hist = await AsyncStorage.getItem('history');
-      if (hist) setHistory(JSON.parse(hist));
+        setSeenInstructions(meta.seenInstructions === 'true');
 
-      // running + remaining
-      const ts = await AsyncStorage.getItem('timerStart');
-      const runFlag = await AsyncStorage.getItem('running');
-      if (runFlag === 'true' && ts) {
-        setRunning(true);
-        const elapsed = Math.floor((Date.now() - parseInt(ts, 10)) / 1000);
-        setRemaining(Math.max(0, TIMER_SECONDS - elapsed));
+        if (meta.appSettings) {
+          const s = JSON.parse(meta.appSettings);
+          setSettings(s);
+
+          // Calcola remaining
+          const now            = Date.now();
+          const elapsed        = Math.floor((now - (parseInt(meta.timerStart || now,10))) / 1000);
+          const daysSinceStart = Math.floor((now - s.startDate) / (1000 * 60 * 60 * 24));
+          const extra          = Math.floor(daysSinceStart / INCREMENT_DAYS) * INCREMENT_SECONDS;
+          const total          = TIMER_SECONDS_DEFAULT + extra;
+
+          setRemaining(Math.max(0, total - elapsed));
+          setRunning(meta.running === 'true');
+          if (meta.running === 'true') {
+            scheduleEndNotification(Math.max(0, total - elapsed));
+          }
+        }
+
+        // Storico e riepilogo
+        const histResult = await runSql(`SELECT * FROM history ORDER BY id DESC`);
+        const hist       = histResult.rows._array;
+        setHistory(hist);
+        setSummary(hist.reduce((acc, e) => {
+          acc[e.date] = (acc[e.date] || 0) + 1;
+          return acc;
+        }, {}));
+
+        setLoading(false);
+      } catch (err) {
+        console.error("DB init failed:", err);
+        Alert.alert("Errore DB", "Impossibile inizializzare il database");
       }
-
-      setAppIsReady(true);
     })();
   }, []);
 
-  // 3) persist settings
+  // 2) Salva impostazioni
   useEffect(() => {
-    if (settings) {
-      AsyncStorage.setItem('appSettings', JSON.stringify(settings));
-    }
+    if (!settings) return;
+    runSql(`INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)`, ['appSettings', JSON.stringify(settings)]);
+    runSql(`INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)`, ['startDate', String(settings.startDate)]);
   }, [settings]);
 
-  // 4) persist history + summary
+  // 3) Salva stato timer
   useEffect(() => {
-    AsyncStorage.setItem('history', JSON.stringify(history));
-    const sums = {};
-    history.forEach(e => {
-      sums[e.date] = (sums[e.date] || 0) + 1;
-    });
-    setSummary(sums);
-  }, [history]);
-
-  // 5) persist running flag
-  useEffect(() => {
-    AsyncStorage.setItem('running', running ? 'true' : 'false');
-  }, [running]);
-
-  // 6) timer persistente + notifica
-  useEffect(() => {
+    runSql(`INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)`, ['running', running ? 'true' : 'false']);
     if (running) {
-      // salva inizio
-      AsyncStorage.setItem('timerStart', Date.now().toString());
-      // cancella pianificazioni precedenti
-      Notifications.cancelAllScheduledNotificationsAsync();
-
-      // pianifica notifica tra TIMER_SECONDS
-      Notifications.scheduleNotificationAsync({
-        content: {
-          title: "⏰ Tempo scaduto!",
-          body:  "Il tuo timer è finito, puoi fumare o fare una pausa ulteriore.",
-          sound: true,
-        },
-        trigger: { seconds: TIMER_SECONDS },
-      });
-
-      // intervallo
-      timerRef.current = setInterval(async () => {
-        const start = parseInt(await AsyncStorage.getItem('timerStart') || '0', 10);
-        const elapsed = Math.floor((Date.now() - start) / 1000);
-        const rem = TIMER_SECONDS - elapsed;
-        if (rem <= 0) {
-          clearInterval(timerRef.current);
-          setRunning(false);
-          setRemaining(0);
-        } else {
-          setRemaining(rem);
-        }
-      }, 1000);
+      const now = Date.now();
+      runSql(`INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)`, ['timerStart', String(now)]);
+      scheduleEndNotification(remaining);
     }
-    return () => clearInterval(timerRef.current);
   }, [running]);
 
-  // ---- HANDLERS ----
-
+  // 4) Fine istruzioni
   const handleDoneInstructions = async () => {
-    await AsyncStorage.setItem('seenInstructions', 'true');
+    await runSql(`INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)`, ['seenInstructions', 'true']);
     setSeenInstructions(true);
   };
-  const handleSaveSettings = obj => {
-    setSettings(obj);
-  };
+
+  // 5) “STO FUMANDO”
   const handleSmoke = () => {
     const it = items[Math.floor(Math.random() * items.length)];
     setMotivation(it);
-    const now = new Date();
-    setHistory([{
-      date: now.toLocaleDateString(),
-      time: now.toLocaleTimeString().slice(0, 5),
-      cost: (settings?.packPrice ?? DEFAULT_PACK_PRICE) / DEFAULT_CIG_PER_PACK
-    }, ...history]);
-    setRemaining(TIMER_SECONDS);
+
+    const now     = new Date();
+    const isoDate = now.toISOString().slice(0,10);
+    const time24  = now.toTimeString().slice(0,5);
+    const cost    = settings.packPrice / DEFAULT_CIG_PER_PACK;
+
+    runSql(`INSERT INTO history(date,time,cost) VALUES(?,?,?)`, [isoDate, time24, cost])
+      .then(resultSet => {
+        setHistory(prev => [
+          { id: resultSet.insertId, date: isoDate, time: time24, cost },
+          ...prev
+        ]);
+        setSummary(prev => ({
+          ...prev,
+          [isoDate]: (prev[isoDate] || 0) + 1
+        }));
+      })
+      .catch(err => console.error("Error inserting smoke:", err));
+
+    // Calcola nuovo totale con incremento giorni
+    const daysUsed = Math.floor((Date.now() - settings.startDate) / (1000 * 60 * 60 * 24));
+    const extra    = Math.floor(daysUsed / INCREMENT_DAYS) * INCREMENT_SECONDS;
+    const totalSec = TIMER_SECONDS_DEFAULT + extra;
+
+    setRemaining(totalSec);
     setRunning(true);
+    scheduleEndNotification(totalSec);
   };
-  const handleReset = async () => {
-    Alert.alert('Reset app', 'Vuoi cancellare tutte le impostazioni e storico?', [
-      { text: 'Annulla' },
+
+  // 6) Reset completo
+  const handleReset = () => {
+    Alert.alert('Reset','Cancellare tutto?',[ 
+      { text:'No' },
       {
-        text: 'Resetta', style: 'destructive', onPress: async () => {
-          await AsyncStorage.multiRemove(['seenInstructions','appSettings','history','timerStart','running']);
+        text:'Sì', style:'destructive', onPress: async () => {
+          await runSql(`DELETE FROM meta`);
+          await runSql(`DELETE FROM history`);
           setSeenInstructions(false);
           setSettings(null);
           setHistory([]);
+          setSummary({});
           setRunning(false);
-          setRemaining(TIMER_SECONDS);
+          setRemaining(0);
         }
-      },
+      }
     ]);
   };
 
-  // format mm:ss
-  const mm = String(Math.floor(remaining / 60)).padStart(2, '0');
-  const ss = String(remaining % 60).padStart(2, '0');
+  // Formatta timer MM:SS
+  const mm = String(Math.floor(remaining/60)).padStart(2,'0');
+  const ss = String(remaining % 60).padStart(2,'0');
   const timerText = `${mm}:${ss}`;
 
-  // ---- RENDER ----
-  if (loading || !appIsReady) {
+  // RENDER
+  if (loading) {
     return (
       <LinearGradient colors={['#A8E6CF','#FFFFFF','#D0F0FD']} style={styles.splash}>
-        <ActivityIndicator size="large" color="#004d40" />
+        <ActivityIndicator size="large" color="#004d40"/>
         <Text style={styles.splashText}>Smoking Timer</Text>
       </LinearGradient>
     );
   }
   if (!seenInstructions) {
-    return <InstructionsScreen onDone={handleDoneInstructions} />;
+    return <InstructionsScreen onDone={handleDoneInstructions}/>;
   }
   if (!settings) {
-    return <SettingsScreen onSave={handleSaveSettings} />;
+    return <SettingsScreen onSave={setSettings}/>;
   }
 
   return (
     <LinearGradient
-      colors={isDark? ['#000','#000','#000'] : ['#A8E6CF','#FFFFFF','#D0F0FD']}
+      colors={isDark ? ['#000','#000'] : ['#A8E6CF','#FFFFFF','#D0F0FD']}
       style={styles.container}
     >
-      {/* Top bar */}
       <View style={styles.topBar}>
         <View style={styles.switchRow}>
           <Text style={[styles.switchLabel, isDark && styles.darkText]}>🌙</Text>
-          <Switch value={isDark} onValueChange={setManualDark} />
+          <Switch value={isDark} onValueChange={setManualDark}/>
         </View>
         <TouchableOpacity onPress={handleReset}>
           <Text style={[styles.resetText, isDark && styles.darkText]}>RESET</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Timer */}
-      <Text style={[styles.timer, isDark?styles.timerDark:styles.timerLight]}>
+      <Text style={[styles.timer, isDark ? styles.timerDark : styles.timerLight]}>
         {timerText}
       </Text>
-      <TouchableOpacity
-        style={[styles.button, isDark?styles.buttonDark:styles.buttonLight]}
-        onPress={() => running ? setRunning(false) : handleSmoke()}
-      >
-        <Text style={styles.buttonText}>
-          {running ? 'FERMA ⏸' : 'STO FUMANDO 🚬'}
-        </Text>
-      </TouchableOpacity>
 
-      {/* Motivazione / link */}
-      {motivation && motivation.type==='link' && (
-        <Text style={styles.link} onPress={()=>Linking.openURL(motivation.url)}>
+      {!running && (
+        <TouchableOpacity
+          style={[styles.button, isDark ? styles.buttonDark : styles.buttonLight]}
+          onPress={handleSmoke}
+        >
+          <Text style={styles.buttonText}>STO FUMANDO 🚬</Text>
+        </TouchableOpacity>
+      )}
+
+      {motivation && motivation.type === 'link' && (
+        <Text style={styles.link} onPress={() => Linking.openURL(motivation.url)}>
           {motivation.text}
         </Text>
       )}
-      {motivation && motivation.type!=='link' && (
+      {motivation && motivation.type !== 'link' && (
         <Text style={styles.motivation}>{motivation.text}</Text>
       )}
 
-      {/* Storico dettagliato */}
-      <Text style={[styles.section, isDark&&styles.darkText]}>🕒 Dettaglio fumo</Text>
+      <Text style={[styles.section, isDark && styles.darkText]}>
+        🕒 Dettaglio fumo
+      </Text>
       <View style={styles.historyContainer}>
         <FlatList
           data={history}
-          keyExtractor={(_,i)=>String(i)}
-          renderItem={({item})=>(
+          keyExtractor={item => String(item.id)}
+          renderItem={({item}) => (
             <View style={styles.entry}>
-              <Text style={[styles.entryText, isDark&&styles.darkText]}>
+              <Text style={[styles.entryText, isDark && styles.darkText]}>
                 {item.date} {item.time} – €{item.cost.toFixed(2)}
               </Text>
             </View>
@@ -338,12 +331,13 @@ export default function App() {
         />
       </View>
 
-      {/* Riepilogo giornaliero */}
-      <Text style={[styles.section, isDark&&styles.darkText]}>📊 Riepilogo giornaliero</Text>
+      <Text style={[styles.section, isDark && styles.darkText]}>
+        📊 Riepilogo giornaliero
+      </Text>
       <ScrollView style={styles.summaryContainer}>
-        {Object.entries(summary).map(([day,c])=>(
-          <Text key={day} style={[styles.summaryText, isDark&&styles.darkText]}>
-            {day}: {c} sigarette
+        {Object.entries(summary).map(([day, c]) => (
+          <Text key={day} style={[styles.summaryText, isDark && styles.darkText]}>
+            {day}: {c} {c === 1 ? 'sigaretta' : 'sigarette'}
           </Text>
         ))}
       </ScrollView>
@@ -352,7 +346,7 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  splash: { flex:1,justifyContent:'center',alignItems:'center' },
+  splash:{ flex:1,justifyContent:'center',alignItems:'center' },
   splashText:{ marginTop:20,fontSize:28,fontWeight:'bold',color:'#004d40' },
   container:{ flex:1,padding:20 },
   topBar:{ flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginTop:20 },
@@ -361,9 +355,11 @@ const styles = StyleSheet.create({
   resetText:{ color:'#c00',fontWeight:'bold' },
   darkText:{ color:'#0f0' },
   timer:{ fontSize:48,textAlign:'center',marginVertical:10 },
-  timerLight:{ color:'#004d40' },  timerDark:{ color:'#00FF00' },
+  timerLight:{ color:'#004d40' },
+  timerDark:{ color:'#00FF00' },
   button:{ padding:12,borderRadius:8,marginVertical:10,alignItems:'center' },
-  buttonLight:{ backgroundColor:'#00796b' },  buttonDark:{ backgroundColor:'#004d40' },
+  buttonLight:{ backgroundColor:'#00796b' },
+  buttonDark:{ backgroundColor:'#004d40' },
   buttonText:{ color:'#fff',fontSize:20,fontWeight:'bold' },
   motivation:{ fontSize:18,fontStyle:'italic',textAlign:'center',marginVertical:8,color:'#f57f17' },
   link:{ fontSize:18,textAlign:'center',marginVertical:8,color:'#0066cc',textDecorationLine:'underline' },
@@ -373,12 +369,12 @@ const styles = StyleSheet.create({
   entryText:{ fontSize:16,color:'#333' },
   summaryContainer:{ maxHeight:120,marginVertical:5 },
   summaryText:{ fontSize:18,marginVertical:2,color:'#333' },
-  instructionsContainer:{ padding:20 },
+  instructionsContainer:{ padding:20, paddingTop:100 },
   instructionsTitle:{ fontSize:24,fontWeight:'bold',textAlign:'center',marginBottom:12 },
   instructionsText:{ fontSize:16,lineHeight:24 },
   instructionsButton:{ marginTop:20,backgroundColor:'#00796b',padding:12,borderRadius:6,alignSelf:'center' },
   instructionsButtonText:{ color:'#fff',fontSize:18 },
-  settingsContainer:{ padding:20 },
+  settingsContainer:{ padding:20, paddingTop:100 },
   settingsTitle:{ fontSize:22,fontWeight:'bold',marginBottom:12,textAlign:'center' },
   input:{ borderWidth:1,borderColor:'#888',padding:8,borderRadius:4,marginVertical:6 },
   settingsButton:{ marginTop:12,backgroundColor:'#00796b',padding:10,borderRadius:6,alignItems:'center' },

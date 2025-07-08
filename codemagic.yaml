@@ -1,27 +1,41 @@
 workflows:
   build-app:
-    name: Build APK & AAB with Expo
+    name: Build & Download with EAS
     environment:
       node: 18
       npm: 9
       groups:
-        - eas        # qui viene caricato il group “eas” con EXPO_TOKEN
+        - eas   # deve contenere EXPO_TOKEN
 
     scripts:
       - name: Install dependencies
-        script: npm install
+        script: npm ci
 
       - name: Install EAS CLI
         script: npm install -g eas-cli
 
-      # se usi bare workflow, decommenta:
-      # - name: Expo prebuild
-      #   script: npx expo prebuild --platform android --no-install
-
       - name: Run EAS build
-        # EAS CLI userà automaticamente il token $EXPO_TOKEN
-        script: eas build -p android --profile production --non-interactive
+        script: |
+          eas build \
+            --platform android \
+            --profile production \
+            --non-interactive
+
+      - name: Download APK/AAB artifact
+        script: |
+          mkdir -p build
+          # Estrae l'URL dal JSON prodotto da `eas build:list`
+          URL=$(eas build:list \
+            --json \
+            --limit 1 \
+            --platform android \
+            --non-interactive 2>/dev/null \
+            | sed -n 's/.*"buildUrl":[[:space:]]*"\([^"]*\)".*/\1/p')
+          EXT="${URL##*.}"
+          echo "Scarico artefatto da $URL"
+          curl -L "$URL" -o "build/app.$EXT"
 
     artifacts:
-      - build/**/outputs/**/*.apk
-      - build/**/outputs/**/*.aab
+      - build/*.apk
+      - build/*.aab
+
