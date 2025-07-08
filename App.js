@@ -72,7 +72,9 @@ function InstructionsScreen({ onDone }) {
         Dopo aver impostato i dati clicca “STO FUMANDO” all’accensione,
         vedrai un timer di base di 40′ che cresce di 10′ ogni 5 giorni.{'\n\n'}
         Troverai un report quotidiano e totale sui tuoi progressi.{'\n\n'}
-        {'\u2022'} <Text style={{ fontWeight:'bold' }}>N.b. lascia l'app in background se stai fumando. Alla chiusura l'app perderà la sessione in corso ma non i salvataggi dei tuoi report.</Text>
+        <Text style={{ fontWeight: 'bold' }}>
+          N.b. lascia l'app in background se stai fumando. Alla chiusura l'app perderà la sessione in corso ma non i salvataggi dei tuoi report.
+        </Text>
         {'\n\n'}Buona fortuna, CI RIUSCIRAI!
       </Text>
       <TouchableOpacity style={styles.instructionsButton} onPress={onDone}>
@@ -95,7 +97,7 @@ function SettingsScreen({ onSave }) {
     onSave({
       name,
       cigsPerDay: parseInt(cigs,10),
-      packPrice:  parseFloat(price.replace(',','.')),
+      packPrice:  parseFloat(price.replace(',', '.')),
       startDate:  Date.now(),
     });
   };
@@ -122,9 +124,9 @@ export default function App() {
   const [motivation,       setMotivation]       = useState(null);
   const [history,          setHistory]          = useState([]);
   const [summary,          setSummary]          = useState({});
-  const scheme = Appearance.getColorScheme();
-  const [dark, setDark] = useState(false);
-  const isDark = dark || scheme==='dark';
+  const colorScheme = Appearance.getColorScheme();
+  const [manualDark,      setManualDark]       = useState(false);
+  const isDark = manualDark || colorScheme === 'dark';
   const appState = useRef(AppState.currentState);
 
   // Countdown in foreground
@@ -133,40 +135,40 @@ export default function App() {
     if (running) {
       timer = setInterval(() => {
         setRemaining(r => {
-          if (r<=1) { clearInterval(timer); setRunning(false); return 0; }
-          return r-1;
+          if (r <= 1) { clearInterval(timer); setRunning(false); return 0; }
+          return r - 1;
         });
-      },1000);
+      }, 1000);
     }
-    return ()=> timer && clearInterval(timer);
-  },[running]);
+    return () => timer && clearInterval(timer);
+  }, [running]);
 
   // Recalc on resume
   useEffect(() => {
     const sub = AppState.addEventListener('change', next => {
-      if (appState.current.match(/inactive|background/) && next==='active') {
+      if (appState.current.match(/inactive|background/) && next === 'active') {
         if (running) recalcRemaining();
       }
       appState.current = next;
     });
-    return ()=> sub.remove();
-  },[running]);
+    return () => sub.remove();
+  }, [running]);
 
   async function recalcRemaining() {
     const res = await runSql(`SELECT value FROM meta WHERE key = ?`, ['timerEnd']);
     if (res.length) {
-      const end = parseInt(res[0].value,10);
-      const left = Math.max(0, Math.ceil((end-Date.now())/1000));
+      const end = parseInt(res[0].value, 10);
+      const left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
       setRemaining(left);
-      setRunning(left>0);
+      setRunning(left > 0);
     }
   }
 
   // Init DB, load settings, session, history
   useEffect(() => {
-    (async ()=>{
+    (async () => {
       const { status } = await Notifications.requestPermissionsAsync();
-      if (status!=='granted') {
+      if (status !== 'granted') {
         RNAlert.alert('Permessi notifiche negati','Abilita le notifiche nelle impostazioni.');
       }
       try {
@@ -174,97 +176,100 @@ export default function App() {
         await runSql(`CREATE TABLE IF NOT EXISTS history(id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT, time TEXT, cost REAL)`);
 
         const metaArr = await runSql(`SELECT * FROM meta`);
-        // replace Object.fromEntries with reduce for Hermes
-        const meta = metaArr.reduce((o,row)=>{
-          o[row.key]=row.value; return o;
-        },{});
+        // build meta without Object.fromEntries
+        const meta = metaArr.reduce((o, row) => {
+          o[row.key] = row.value;
+          return o;
+        }, {});
 
         if (meta.appSettings) setSettings(JSON.parse(meta.appSettings));
-        setSeenInstructions(meta.seenInstructions==='true');
+        setSeenInstructions(meta.seenInstructions === 'true');
 
         if (meta.timerEnd) {
-          const end = parseInt(meta.timerEnd,10);
-          const left = Math.max(0,Math.ceil((end-Date.now())/1000));
+          const end = parseInt(meta.timerEnd, 10);
+          const left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
           setRemaining(left);
-          if (left>0) {
-            setRunning(meta.running==='true');
+          if (left > 0) {
+            setRunning(meta.running === 'true');
             scheduleEndNotification(left);
-          } else setRunning(false);
+          } else {
+            setRunning(false);
+          }
         }
 
+        // load history and build summary via forEach
         const hist = await runSql(`SELECT * FROM history ORDER BY id DESC`);
         setHistory(hist);
-        // replace Object.entries with keys()
         const sum = {};
-        Object.keys(hist.reduce((acc,e)=>{
-          sum[e.date]=(sum[e.date]||0)+1; return acc;
-        },{}));
-
+        hist.forEach(e => {
+          sum[e.date] = (sum[e.date] || 0) + 1;
+        });
         setSummary(sum);
 
         setLoading(false);
-      } catch(err) {
+      } catch (err) {
         console.error(err);
         RNAlert.alert('Errore DB','Impossibile inizializzare il database');
       }
     })();
-  },[]);
+  }, []);
 
   // Save settings
-  useEffect(()=>{
-    if(!settings) return;
-    runSql(`INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)`,['appSettings',JSON.stringify(settings)]);
-    runSql(`INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)`,['startDate',String(settings.startDate)]);
-  },[settings]);
+  useEffect(() => {
+    if (!settings) return;
+    runSql(`INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)`, ['appSettings', JSON.stringify(settings)]);
+    runSql(`INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)`, ['startDate', String(settings.startDate)]);
+  }, [settings]);
 
   // Save running flag
-  useEffect(()=>{
-    runSql(`INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)`,['running',running?'true':'false']);
-  },[running]);
+  useEffect(() => {
+    runSql(`INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)`, ['running', running ? 'true' : 'false']);
+  }, [running]);
 
   // Confirm instructions
-  const handleDoneInstructions = ()=>{
+  const handleDoneInstructions = () => {
     setSeenInstructions(true);
-    runSql(`INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)`,['seenInstructions','true']).catch(console.warn);
+    runSql(`INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)`, ['seenInstructions', 'true'])
+      .catch(console.warn);
   };
 
   // STO FUMANDO
-  const handleSmoke = ()=>{
-    const it = items[Math.floor(Math.random()*items.length)];
+  const handleSmoke = () => {
+    const it = items[Math.floor(Math.random() * items.length)];
     setMotivation(it);
 
-    const now = Date.now();
-    const iso = new Date(now).toISOString().slice(0,10);
-    const t24 = new Date(now).toTimeString().slice(0,5);
-    const cost = settings.packPrice/DEFAULT_CIG_PER_PACK;
-    const days = Math.floor((now-settings.startDate)/(1000*60*60*24));
-    const extra = Math.floor(days/INCREMENT_DAYS)*INCREMENT_SECONDS;
-    const total = TIMER_SECONDS_DEFAULT+extra;
-    const end = now+total*1000;
+    const now      = Date.now();
+    const isoDate  = new Date(now).toISOString().slice(0, 10);
+    const time24   = new Date(now).toTimeString().slice(0, 5);
+    const cost     = settings.packPrice / DEFAULT_CIG_PER_PACK;
+    const daysUsed = Math.floor((now - settings.startDate) / (1000 * 60 * 60 * 24));
+    const extra    = Math.floor(daysUsed / INCREMENT_DAYS) * INCREMENT_SECONDS;
+    const totalSec = TIMER_SECONDS_DEFAULT + extra;
+    const timerEnd = now + totalSec * 1000;
 
-    runSql(`INSERT INTO history(date,time,cost) VALUES(?,?,?)`,[iso,t24,cost])
-      .then(({ lastInsertRowId })=>{
-        setHistory(prev=>[{id:lastInsertRowId,date:iso,time:t24,cost},...prev]);
-        setSummary(prev=>{
-          const copy={...prev};
-          copy[iso]=(copy[iso]||0)+1;
+    runSql(`INSERT INTO history(date,time,cost) VALUES(?,?,?)`, [isoDate, time24, cost])
+      .then(({ lastInsertRowId }) => {
+        setHistory(prev => [{ id: lastInsertRowId, date: isoDate, time: time24, cost }, ...prev]);
+        setSummary(prev => {
+          const copy = { ...prev };
+          copy[isoDate] = (copy[isoDate] || 0) + 1;
           return copy;
         });
       });
 
-    runSql(`INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)`,['timerEnd',String(end)]);
-    runSql(`INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)`,['running','true']);
+    runSql(`INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)`, ['timerEnd', String(timerEnd)]);
+    runSql(`INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)`, ['running', 'true']);
 
-    scheduleEndNotification(total);
-    setRemaining(total);
+    scheduleEndNotification(totalSec);
+    setRemaining(totalSec);
     setRunning(true);
   };
 
   // Reset
-  const handleReset = ()=>{
+  const handleReset = () => {
     RNAlert.alert('Reset','Cancellare tutto?',[
-      {text:'No'},
-      {text:'Sì',style:'destructive',onPress:async ()=>{
+      { text: 'No' },
+      { text: 'Sì', style: 'destructive', onPress: async () => {
         await runSql(`DELETE FROM meta`);
         await runSql(`DELETE FROM history`);
         setSeenInstructions(false);
@@ -277,11 +282,13 @@ export default function App() {
     ]);
   };
 
-  const mm = String(Math.floor(remaining/60)).padStart(2,'0');
-  const ss = String(remaining%60).padStart(2,'0');
+  // Format MM:SS
+  const mm = String(Math.floor(remaining / 60)).padStart(2, '0');
+  const ss = String(remaining % 60).padStart(2, '0');
   const timerText = `${mm}:${ss}`;
 
-  if(loading){
+  // Routing
+  if (loading) {
     return (
       <LinearGradient colors={['#A8E6CF','#FFFFFF','#D0F0FD']} style={styles.splash}>
         <ActivityIndicator size="large" color="#004d40"/>
@@ -289,109 +296,107 @@ export default function App() {
       </LinearGradient>
     );
   }
-  if(!seenInstructions) return <InstructionsScreen onDone={handleDoneInstructions}/>;
-  if(!settings) return <SettingsScreen onSave={setSettings}/>;
+  if (!seenInstructions) return <InstructionsScreen onDone={handleDoneInstructions}/>;
+  if (!settings) return <SettingsScreen onSave={setSettings}/>;
 
 
+  // Main screen
   return (
     <LinearGradient
-      colors={isDark?['#000','#000']:['#A8E6CF','#FFFFFF','#D0F0FD']}
+      colors={isDark ? ['#000','#000'] : ['#A8E6CF','#FFFFFF','#D0F0FD']}
       style={styles.container}
     >
       <View style={styles.topBar}>
         <View style={styles.switchRow}>
-          <Text style={[styles.switchLabel,isDark&&styles.darkText]}>🌙</Text>
-          <Switch value={isDark} onValueChange={setDark}/>
+          <Text style={[styles.switchLabel, isDark && styles.darkText]}>🌙</Text>
+          <Switch value={isDark} onValueChange={setManualDark}/>
         </View>
         <TouchableOpacity onPress={handleReset}>
-          <Text style={[styles.resetText,isDark&&styles.darkText]}>RESET</Text>
+          <Text style={[styles.resetText, isDark && styles.darkText]}>RESET</Text>
         </TouchableOpacity>
       </View>
 
-      <Text style={[styles.timer,isDark?styles.timerDark:styles.timerLight]}>
+      <Text style={[styles.timer, isDark ? styles.timerDark : styles.timerLight]}>
         {timerText}
       </Text>
 
       {!running && (
         <TouchableOpacity
-          style={[styles.button,isDark?styles.buttonDark:styles.buttonLight]}
+          style={[styles.button, isDark ? styles.buttonDark : styles.buttonLight]}
           onPress={handleSmoke}
         >
           <Text style={styles.buttonText}>STO FUMANDO 🚬</Text>
         </TouchableOpacity>
       )}
 
-      {motivation?.type==='link' && (
-        <Text style={styles.link} onPress={()=>Linking.openURL(motivation.url)}>
+      {motivation?.type === 'link' && (
+        <Text style={styles.link} onPress={() => Linking.openURL(motivation.url)}>
           {motivation.text}
         </Text>
       )}
-      {motivation?.type!=='link' && motivation && (
+      {motivation?.type !== 'link' && motivation && (
         <Text style={styles.motivation}>{motivation.text}</Text>
       )}
 
-      <Text style={[styles.section,isDark&&styles.darkText]}>🕒 Dettaglio fumo</Text>
+      <Text style={[styles.section, isDark && styles.darkText]}>🕒 Dettaglio fumo</Text>
       <View style={styles.historyContainer}>
         <FlatList
           data={history}
-          keyExtractor={i=>String(i.id)}
-          renderItem={({item})=>(
+          keyExtractor={item => String(item.id)}
+          renderItem={({item}) => (
             <View style={styles.entry}>
-              <Text style={[styles.entryText,isDark&&styles.darkText]}>
+              <Text style={[styles.entryText, isDark && styles.darkText]}>
                 {item.date} {item.time} – €{item.cost.toFixed(2)}
               </Text>
             </View>
           )}
-        />
+        />  
       </View>
 
-      <Text style={[styles.section,isDark&&styles.darkText]}>📊 Riepilogo giornaliero</Text>
+      <Text style={[styles.section, isDark && styles.darkText]}>📊 Riepilogo giornaliero</Text>
       <ScrollView style={styles.summaryContainer}>
-        {Object.keys(summary).map(day=>{
-          const c=summary[day];
-          return (
-            <Text key={day} style={[styles.summaryText,isDark&&styles.darkText]}>
-              {day}: {c} {c===1?'sigaretta':'sigarette'}
-            </Text>
-          );
-        })}
+        {Object.keys(summary).map(day => (
+          <Text key={day} style={[styles.summaryText, isDark && styles.darkText]}>
+            {day}: {summary[day]} {summary[day] === 1 ? 'sigaretta' : 'sigarette'}
+          </Text>
+        ))}
       </ScrollView>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  splash:{flex:1,justifyContent:'center',alignItems:'center'},
-  splashText:{marginTop:20,fontSize:28,fontWeight:'bold',color:'#004d40'},
-  container:{flex:1,padding:20},
-  topBar:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginTop:20},
-  switchRow:{flexDirection:'row',alignItems:'center'},
-  switchLabel:{fontSize:20,marginRight:4},
-  resetText:{color:'#c00',fontWeight:'bold'},
-  darkText:{color:'#0f0'},
-  timer:{fontSize:48,textAlign:'center',marginVertical:10},
-  timerLight:{color:'#004d40'},
-  timerDark:{color:'#00FF00'},
-  button:{padding:12,borderRadius:8,marginVertical:10,alignItems:'center'},
-  buttonLight:{backgroundColor:'#00796b'},
-  buttonDark:{backgroundColor:'#004d40'},
-  buttonText:{color:'#fff',fontSize:20,fontWeight:'bold'},
-  motivation:{fontSize:18,fontStyle:'italic',textAlign:'center',marginVertical:8,color:'#f57f17'},
-  link:{fontSize:18,textAlign:'center',marginVertical:8,color:'#0066cc',textDecorationLine:'underline'},
-  section:{fontSize:20,fontWeight:'bold',marginTop:15,textAlign:'center',color:'#004d40'},
-  historyContainer:{flex:1,marginVertical:5},
-  entry:{borderBottomWidth:1,borderBottomColor:'#ccc',paddingVertical:4},
-  entryText:{fontSize:16,color:'#333'},
-  summaryContainer:{maxHeight:120,marginVertical:5},
-  summaryText:{fontSize:18,marginVertical:2,color:'#333'},
-  instructionsContainer:{padding:20,paddingTop:100},
-  instructionsTitle:{fontSize:24,fontWeight:'bold',textAlign:'center',marginBottom:12},
-  instructionsText:{fontSize:16,lineHeight:24,textAlign:'center'},
-  instructionsButton:{marginTop:20,backgroundColor:'#00796b',padding:12,borderRadius:6,alignSelf:'center'},
-  instructionsButtonText:{color:'#fff',fontSize:18},
-  settingsContainer:{padding:20,paddingTop:100},
-  settingsTitle:{fontSize:22,fontWeight:'bold',marginBottom:12,textAlign:'center'},
-  input:{borderWidth:1,borderColor:'#888',padding:8,borderRadius:4,marginVertical:6},
-  settingsButton:{marginTop:12,backgroundColor:'#00796b',padding:10,borderRadius:6,alignItems:'center'},
-  settingsButtonText:{color:'#fff',fontSize:16},
+  splash:               { flex:1,justifyContent:'center',alignItems:'center' },
+  splashText:           { marginTop:20,fontSize:28,fontWeight:'bold',color:'#004d40' },
+  container:            { flex:1,padding:20 },
+  topBar:               { flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginTop:20 },
+  switchRow:            { flexDirection:'row',alignItems:'center' },
+  switchLabel:          { fontSize:20,marginRight:4 },
+  resetText:            { color:'#c00',fontWeight:'bold' },
+  darkText:             { color:'#0f0' },
+  timer:                { fontSize:48,textAlign:'center',marginVertical:10 },
+  timerLight:           { color:'#004d40' },
+  timerDark:            { color:'#00FF00' },
+  button:               { padding:12,borderRadius:8,marginVertical:10,alignItems:'center' },
+  buttonLight:          { backgroundColor:'#00796b' },
+  buttonDark:           { backgroundColor:'#004d40' },
+  buttonText:           { color:'#fff',fontSize:20,fontWeight:'bold' },
+  motivation:           { fontSize:18,fontStyle:'italic',textAlign:'center',marginVertical:8,color:'#f57f17' },
+  link:                 { fontSize:18,textAlign:'center',marginVertical:8,color:'#0066cc',textDecorationLine:'underline' },
+  section:              { fontSize:20,fontWeight:'bold',marginTop:15,textAlign:'center',color:'#004d40' },
+  historyContainer:     { flex:1,marginVertical:5 },
+  entry:                { borderBottomWidth:1,borderBottomColor:'#ccc',paddingVertical:4 },
+  entryText:            { fontSize:16,color:'#333' },
+  summaryContainer:     { maxHeight:120,marginVertical:5 },
+  summaryText:          { fontSize:18,marginVertical:2,color:'#333' },
+  instructionsContainer:{ padding:20,paddingTop:100 },
+  instructionsTitle:    { fontSize:24,fontWeight:'bold',textAlign:'center',marginBottom:12 },
+  instructionsText:     { fontSize:16,lineHeight:24,textAlign:'center' },
+  instructionsButton:   { marginTop:20,backgroundColor:'#00796b',padding:12,borderRadius:6,alignSelf:'center' },
+  instructionsButtonText:{ color:'#fff',fontSize:18 },
+  settingsContainer:    { padding:20,paddingTop:100 },
+  settingsTitle:        { fontSize:22,fontWeight:'bold',marginBottom:12,textAlign:'center' },
+  input:                { borderWidth:1,borderColor:'#888',padding:8,borderRadius:4,marginVertical:6 },
+  settingsButton:       { marginTop:12,backgroundColor:'#00796b',padding:10,borderRadius:6,alignItems:'center' },
+  settingsButtonText:   { color:'#fff',fontSize:16 },
 });
