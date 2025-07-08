@@ -36,7 +36,8 @@
   ],
   "plugins": [
     "expo-sqlite",
-    "expo-notifications"
+    "expo-notifications",
+    "expo-dev-client"
   ]
 }
 
