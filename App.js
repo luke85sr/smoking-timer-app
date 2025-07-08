@@ -19,19 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Notifications from 'expo-notifications';
 import { runSql } from './database';
 
-// Global JS error handler
-ErrorUtils.setGlobalHandler((error, isFatal) => {
-  RNAlert.alert(
-    isFatal ? 'Errore fatale' : 'Errore',
-    `${error.name}: ${error.message}\n\n${error.stack
-      .split('\n')
-      .slice(0, 5)
-      .join('\n')}`,
-    [{ text: 'OK' }]
-  );
-});
-
-// Foreground notifications handler
+// Handler notifiche in foreground
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true,
@@ -40,12 +28,12 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// Constants
+// Costanti
 const DEFAULT_PACK_PRICE    = 5.30;
 const DEFAULT_CIG_PER_PACK  = 20;
-const TIMER_SECONDS_DEFAULT = 40 * 60; // 40 minutes
-const INCREMENT_DAYS        = 5;       // every 5 days
-const INCREMENT_SECONDS     = 10 * 60; // +10 minutes
+const TIMER_SECONDS_DEFAULT = 40 * 60; // 40 minuti
+const INCREMENT_DAYS        = 5;       // ogni 5 giorni
+const INCREMENT_SECONDS     = 10 * 60; // +10 minuti
 
 const items = [
   { type:'phrase',  text:'Sei più forte di una sigaretta. Ogni respiro è un passo verso la salute!' },
@@ -176,7 +164,6 @@ export default function App() {
         await runSql(`CREATE TABLE IF NOT EXISTS history(id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT, time TEXT, cost REAL)`);
 
         const metaArr = await runSql(`SELECT * FROM meta`);
-        // build meta without Object.fromEntries
         const meta = metaArr.reduce((o, row) => {
           o[row.key] = row.value;
           return o;
@@ -267,7 +254,7 @@ export default function App() {
 
   // Reset
   const handleReset = () => {
-    RNAlert.alert('Reset','Cancellare tutto?',[
+    RNAlert.alert('Reset','Cancellare tutto?',[ 
       { text: 'No' },
       { text: 'Sì', style: 'destructive', onPress: async () => {
         await runSql(`DELETE FROM meta`);
@@ -298,7 +285,6 @@ export default function App() {
   }
   if (!seenInstructions) return <InstructionsScreen onDone={handleDoneInstructions}/>;
   if (!settings) return <SettingsScreen onSave={setSettings}/>;
-
 
   // Main screen
   return (
