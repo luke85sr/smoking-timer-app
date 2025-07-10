@@ -136,7 +136,7 @@ export default function App() {
   useEffect(() => {
     const sub = AppState.addEventListener('change', next => {
       if (appState.current.match(/inactive|background/) && next === 'active') {
-        if (running) recalcRemaining();
+        recalcRemaining();  // <- sempre ricalcola appena torna attiva
       }
       appState.current = next;
     });
@@ -152,9 +152,14 @@ export default function App() {
         const left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
         setRemaining(left);
         setRunning(left > 0);
+      } else {
+        setRemaining(0);
+        setRunning(false);
       }
     } catch (err) {
       console.error('[TIMER] ERRORE recalcRemaining:', err);
+      setRemaining(0);
+      setRunning(false);
     }
   }
 
@@ -198,17 +203,16 @@ export default function App() {
         setSeenInstructions(meta.seenInstructions === 'true');
         console.log('[INIT] seenInstructions:', meta.seenInstructions);
 
+        // QUI: ricalcola timer in ogni caso (così il timer va avanti anche dopo chiusura)
+        await recalcRemaining();
+
+        // Notifica va rischedulata solo se il timer è attivo
         if (meta.timerEnd) {
           const end = parseInt(meta.timerEnd, 10);
           const left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
-          setRemaining(left);
           if (left > 0) {
-            setRunning(meta.running === 'true');
             scheduleEndNotification(left);
-          } else {
-            setRunning(false);
           }
-          console.log('[INIT] Gestito timerEnd:', left, meta.running);
         }
 
         const hist = await runSql(`SELECT * FROM history ORDER BY id DESC`);
@@ -293,7 +297,7 @@ export default function App() {
   };
 
   const handleReset = () => {
-    RNAlert.alert('Reset','Cancellare tutto?',[
+    RNAlert.alert('Reset','Cancellare tutto?',[ 
       { text: 'No' },
       { text: 'Sì', style: 'destructive', onPress: async () => {
         await runSql(`DELETE FROM meta`);
