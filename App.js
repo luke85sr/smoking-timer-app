@@ -250,7 +250,8 @@ export default function App() {
     console.log('[INSTR] Conferma istruzioni lette');
   };
 
-  const handleSmoke = () => {
+  // VERSIONE MODIFICATA SOLO PER PRIMO PROBLEMA
+  const handleSmoke = async () => {
     const it = items[Math.floor(Math.random() * items.length)];
     setMotivation(it);
 
@@ -263,16 +264,24 @@ export default function App() {
     const totalSec = TIMER_SECONDS_DEFAULT + extra;
     const timerEnd = now + totalSec * 1000;
 
-    runSql(`INSERT INTO history(date,time,cost) VALUES(?,?,?)`, [isoDate, time24, cost])
-      .then(({ lastInsertRowId }) => {
-        setHistory(prev => [{ id: lastInsertRowId, date: isoDate, time: time24, cost }, ...prev]);
-        setSummary(prev => {
-          const copy = { ...prev };
-          copy[isoDate] = (copy[isoDate] || 0) + 1;
-          return copy;
-        });
-      });
+    // 1. Inserisci record
+    await runSql(
+      `INSERT INTO history(date, time, cost) VALUES (?, ?, ?)`,
+      [isoDate, time24, cost]
+    );
 
+    // 2. Aggiorna la lista (query immediatamente dopo)
+    const hist = await runSql(`SELECT * FROM history ORDER BY id DESC`);
+    setHistory(hist);
+
+    // 3. Aggiorna il riepilogo
+    const sum = {};
+    hist.forEach(e => {
+      sum[e.date] = (sum[e.date] || 0) + 1;
+    });
+    setSummary(sum);
+
+    // 4. Salva meta e avvia timer come già facevi
     runSql(`INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)`, ['timerEnd', String(timerEnd)]);
     runSql(`INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)`, ['running', 'true']);
 
