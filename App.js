@@ -63,7 +63,9 @@ function InstructionsScreen({ onDone }) {
         vedrai un timer di base di 40′ che cresce di 10′ ogni 5 giorni.{'\n\n'}
         Troverai un report quotidiano e totale sui tuoi progressi.{'\n\n'}
         <Text style={{ fontWeight: 'bold' }}>
-          N.b. lascia l'app in background se stai fumando. Alla chiusura l'app perderà la sessione in corso ma non i salvataggi dei tuoi report.
+          Quando avvii la sessione di fumo, puoi lasciare l'app in background o richiuderla, 
+          una volta terminata la pausa riceverai una notifica per ricordarti che, se vuoi, puoi fumare. 
+          Ma puoi anche non fumare subito e prendere più tempo e aria pulita per i tuoi polmoni.
         </Text>
         {'\n\n'}Buona fortuna, CI RIUSCIRAI!
       </Text>
