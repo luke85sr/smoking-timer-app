@@ -30,16 +30,16 @@
       "projectId": "aaabcc0c-183d-4df9-bacb-19864a572d41"
     }
   },
-  "sdkVersion": "53.0.0",
+    "sdkVersion": "53.0.0",
   "platforms": [
     "ios",
     "android"
   ],
   "plugins": [
-    "expo-sqlite",
     "expo-notifications"
   ]
 }
+
 
 
 

@@ -1,5 +1,9 @@
-import * as SQLite from 'expo-sqlite';
-const db = SQLite.openDatabase('smoking_timer.db');
+import SQLite from 'react-native-sqlite-storage';
+const db = SQLite.openDatabase(
+  { name: 'smoking_timer.db', location: 'default' }, // raccomandato da doc ufficiale
+  () => console.log('[DB] Database opened!'),
+  err => console.error('[DB] Open error:', err)
+);
 
 export function runSql(sql, params = []) {
   console.log('runSql CHIAMATO:', sql, params);
@@ -13,7 +17,11 @@ export function runSql(sql, params = []) {
             console.log('runSql SUCCESS:', sql, result);
             const verb = sql.trim().split(/\s+/)[0].toUpperCase();
             if (verb === 'SELECT') {
-              resolve(result.rows._array);
+              const arr = [];
+              for (let i = 0; i < result.rows.length; i++) {
+                arr.push(result.rows.item(i));
+              }
+              resolve(arr);
             } else {
               resolve({
                 insertId: result.insertId,
