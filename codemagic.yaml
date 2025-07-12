@@ -5,15 +5,11 @@ workflows:
       node: 18
       java: 17
       groups:
-        - eas
+        - eas # CONTIENE IL TUO CODEMAGIC_TOKEN
     scripts:
       - name: Install dependencies
         script: |
           npm ci
-
-      - name: Run React Native Autolinking
-        script: |
-          npx react-native autolink
 
       - name: Clean Gradle
         script: |
