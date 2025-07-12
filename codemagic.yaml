@@ -5,8 +5,20 @@ workflows:
       node: 18
       java: 17
       groups:
-        - eas # CONTIENE IL TUO CODEMAGIC_TOKEN
+        - eas # contiene il tuo CodeMagic Token
     scripts:
+      - name: Verifica react-native.config.js
+        script: |
+          if [ ! -f react-native.config.js ]; then
+            echo "❌ react-native.config.js mancante!"
+            exit 1
+          fi
+          if ! grep -q "androidPackageName" react-native.config.js; then
+            echo "❌ androidPackageName mancante in react-native.config.js!"
+            exit 1
+          fi
+          echo "✅ react-native.config.js trovato e valido"
+
       - name: Install dependencies
         script: |
           npm ci
@@ -15,11 +27,6 @@ workflows:
         script: |
           cd android
           ./gradlew clean
-
-      - name: Create dummy autolinking.json
-        script: |
-          mkdir -p android/build/generated/autolinking
-          echo "{}" > android/build/generated/autolinking/autolinking.json
 
       - name: Build release APK
         script: |
