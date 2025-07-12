@@ -4,7 +4,6 @@ workflows:
     environment:
       node: 18
       java: 17
-      android: sdk-34
       groups:
         - eas # CONTIENE IL TUO CODEMAGIC_TOKEN
     scripts:
