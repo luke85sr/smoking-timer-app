@@ -5,7 +5,7 @@ workflows:
       node: 18
       java: 17
       groups:
-        - eas # CONTIENE IL TUO CODEMAGIC_TOKEN
+        - eas
     scripts:
       - name: Install dependencies
         script: |
@@ -26,9 +26,15 @@ workflows:
           cd android
           ./gradlew bundleRelease
 
+      - name: Rename Artifacts
+        script: |
+          VERSION_NAME=$(grep versionName android/app/build.gradle | awk '{print $2}' | tr -d '"')
+          mv android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/SmokingTimer_v$VERSION_NAME.apk
+          mv android/app/build/outputs/bundle/release/app-release.aab android/app/build/outputs/bundle/release/SmokingTimer_v$VERSION_NAME.aab
+
     artifacts:
-      - android/app/build/outputs/**/*.apk
-      - android/app/build/outputs/**/*.aab
+      - android/app/build/outputs/apk/release/*.apk
+      - android/app/build/outputs/bundle/release/*.aab
 
     cache:
       cache_paths:
