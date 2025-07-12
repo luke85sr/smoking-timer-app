@@ -11,6 +11,10 @@ workflows:
         script: |
           npm ci
 
+      - name: Run React Native Autolinking
+        script: |
+          npx react-native autolink
+
       - name: Clean Gradle
         script: |
           cd android
@@ -26,15 +30,9 @@ workflows:
           cd android
           ./gradlew bundleRelease
 
-      - name: Rename Artifacts
-        script: |
-          VERSION_NAME=$(grep versionName android/app/build.gradle | awk '{print $2}' | tr -d '"')
-          mv android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/SmokingTimer_v$VERSION_NAME.apk
-          mv android/app/build/outputs/bundle/release/app-release.aab android/app/build/outputs/bundle/release/SmokingTimer_v$VERSION_NAME.aab
-
     artifacts:
-      - android/app/build/outputs/apk/release/*.apk
-      - android/app/build/outputs/bundle/release/*.aab
+      - android/app/build/outputs/**/*.apk
+      - android/app/build/outputs/**/*.aab
 
     cache:
       cache_paths:
