@@ -1,41 +1,38 @@
 workflows:
-  build-app:
-    name: Build & Download with EAS
+  react-native-bare-android:
+    name: React Native Bare Android Build
     environment:
       node: 18
-      npm: 9
+      java: 17
+      android: sdk-34
       groups:
-        - eas   # deve contenere EXPO_TOKEN
-
+        - eas # CONTIENE IL TUO CODEMAGIC_TOKEN
     scripts:
       - name: Install dependencies
-        script: npm ci
-
-      - name: Install EAS CLI
-        script: npm install -g eas-cli
-
-      - name: Run EAS build
         script: |
-          eas build \
-            --platform android \
-            --profile production \
-            --non-interactive
+          npm ci
 
-      - name: Download APK/AAB artifact
+      - name: Clean Gradle
         script: |
-          mkdir -p build
-          # Estrae l'URL dal JSON prodotto da `eas build:list`
-          URL=$(eas build:list \
-            --json \
-            --limit 1 \
-            --platform android \
-            --non-interactive 2>/dev/null \
-            | sed -n 's/.*"buildUrl":[[:space:]]*"\([^"]*\)".*/\1/p')
-          EXT="${URL##*.}"
-          echo "Scarico artefatto da $URL"
-          curl -L "$URL" -o "build/app.$EXT"
+          cd android
+          ./gradlew clean
+
+      - name: Build release APK
+        script: |
+          cd android
+          ./gradlew assembleRelease
+
+      - name: Build release AAB
+        script: |
+          cd android
+          ./gradlew bundleRelease
 
     artifacts:
-      - build/*.apk
-      - build/*.aab
+      - android/app/build/outputs/**/*.apk
+      - android/app/build/outputs/**/*.aab
 
+    cache:
+      cache_paths:
+        - ~/.gradle/caches
+        - ~/.gradle/wrapper
+        - node_modules

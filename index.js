@@ -1,5 +1,5 @@
-import { registerRootComponent } from 'expo';
+import { AppRegistry } from 'react-native';
 import App from './App';
 
-// registerRootComponent prende cura di registrare il componente principale
-registerRootComponent(App);
+// Registra il componente principale
+AppRegistry.registerComponent('SmokingTimer', () => App);
