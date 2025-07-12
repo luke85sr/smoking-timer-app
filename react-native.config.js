@@ -1,7 +1,7 @@
 module.exports = {
   project: {
     android: {
-      packageName: 'com.luke85sr.smokingtimer', // <-- il tuo package name
+      androidPackageName: 'com.luke85sr.smokingtimer', // <-- CAMBIATO QUI
     },
   },
 };
