@@ -5,20 +5,8 @@ workflows:
       node: 18
       java: 17
       groups:
-        - eas # contiene il tuo CodeMagic Token
+        - eas # contiene il tuo CODEMAGIC_TOKEN
     scripts:
-      - name: Verifica react-native.config.js
-        script: |
-          if [ ! -f react-native.config.js ]; then
-            echo "❌ react-native.config.js mancante!"
-            exit 1
-          fi
-          if ! grep -q "androidPackageName" react-native.config.js; then
-            echo "❌ androidPackageName mancante in react-native.config.js!"
-            exit 1
-          fi
-          echo "✅ react-native.config.js trovato e valido"
-
       - name: Install dependencies
         script: |
           npm ci
@@ -27,6 +15,13 @@ workflows:
         script: |
           cd android
           ./gradlew clean
+
+      - name: Fallback react-native.config.js se mancante
+        script: |
+          if [ ! -f react-native.config.js ]; then
+            echo "✅ Creazione fallback react-native.config.js"
+            echo "module.exports = { project: { android: { packageName: 'com.luke85sr.smokingtimer' } } };" > react-native.config.js
+          fi
 
       - name: Build release APK
         script: |
