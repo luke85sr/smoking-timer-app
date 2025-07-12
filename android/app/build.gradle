@@ -28,9 +28,10 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
 }
 
-// Workaround per task autolinking che fallisce
-tasks.whenTaskAdded { task ->
-    if (task.name == 'generateAutolinkingPackageList') {
-        task.enabled = false
-    }
+// 👇 Workaround definitivo per autolinking task
+gradle.projectsEvaluated {
+    tasks.findAll {
+        it.name == "generateAutolinkingPackageList" ||
+        it.name == "generateAutolinkingNewArchitectureFiles"
+    }.each { it.enabled = false }
 }

@@ -1,57 +1,56 @@
-package com.luke85sr.smokingtimer
+package com.smokingtimer;
 
-import android.app.Application
-import android.content.res.Configuration
+import android.app.Application;
+import com.facebook.react.PackageList;
+import com.facebook.react.ReactApplication;
+import com.facebook.react.ReactNativeHost;
+import com.facebook.react.ReactPackage;
+import com.facebook.soloader.SoLoader;
 
-import com.facebook.react.PackageList
-import com.facebook.react.ReactApplication
-import com.facebook.react.ReactNativeHost
-import com.facebook.react.ReactPackage
-import com.facebook.react.ReactHost
-import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.load
-import com.facebook.react.defaults.DefaultReactNativeHost
-import com.facebook.react.soloader.OpenSourceMergedSoMapping
-import com.facebook.soloader.SoLoader
+import java.util.List;
+import java.util.Arrays;
 
-import expo.modules.ApplicationLifecycleDispatcher
-import expo.modules.ReactNativeHostWrapper
+// Import pacchetti aggiuntivi
+import io.invertase.notifee.NotifeePackage;
+import com.reactnativecommunity.asyncstorage.AsyncStoragePackage;
+import com.BV.LinearGradient.LinearGradientPackage;
+import org.pgsqlite.SQLitePlugin;
 
-class MainApplication : Application(), ReactApplication {
+public class MainApplication extends Application implements ReactApplication {
 
-  override val reactNativeHost: ReactNativeHost = ReactNativeHostWrapper(
-        this,
-        object : DefaultReactNativeHost(this) {
-          override fun getPackages(): List<ReactPackage> {
-            val packages = PackageList(this).packages
-            // Packages that cannot be autolinked yet can be added manually here, for example:
-            // packages.add(MyReactNativePackage())
-            return packages
-          }
-
-          override fun getJSMainModuleName(): String = ".expo/.virtual-metro-entry"
-
-          override fun getUseDeveloperSupport(): Boolean = BuildConfig.DEBUG
-
-          override val isNewArchEnabled: Boolean = BuildConfig.IS_NEW_ARCHITECTURE_ENABLED
-          override val isHermesEnabled: Boolean = BuildConfig.IS_HERMES_ENABLED
-      }
-  )
-
-  override val reactHost: ReactHost
-    get() = ReactNativeHostWrapper.createReactHost(applicationContext, reactNativeHost)
-
-  override fun onCreate() {
-    super.onCreate()
-    SoLoader.init(this, OpenSourceMergedSoMapping)
-    if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
-      // If you opted-in for the New Architecture, we load the native entry point for this app.
-      load()
+  private final ReactNativeHost mReactNativeHost = new ReactNativeHost(this) {
+    @Override
+    public boolean getUseDeveloperSupport() {
+      return BuildConfig.DEBUG;
     }
-    ApplicationLifecycleDispatcher.onApplicationCreate(this)
+
+    @Override
+    protected List<ReactPackage> getPackages() {
+      List<ReactPackage> packages = new PackageList(this).getPackages();
+
+      // Aggiungi manualmente pacchetti non autolinkati
+      packages.add(new NotifeePackage());
+      packages.add(new AsyncStoragePackage());
+      packages.add(new LinearGradientPackage());
+      packages.add(new SQLitePlugin());
+
+      return packages;
+    }
+
+    @Override
+    protected String getJSMainModuleName() {
+      return "index";
+    }
+  };
+
+  @Override
+  public ReactNativeHost getReactNativeHost() {
+    return mReactNativeHost;
   }
 
-  override fun onConfigurationChanged(newConfig: Configuration) {
-    super.onConfigurationChanged(newConfig)
-    ApplicationLifecycleDispatcher.onConfigurationChanged(this, newConfig)
+  @Override
+  public void onCreate() {
+    super.onCreate();
+    SoLoader.init(this, false);
   }
 }
