@@ -16,6 +16,11 @@ workflows:
           cd android
           ./gradlew clean
 
+      - name: Create dummy autolinking.json
+        script: |
+          mkdir -p android/build/generated/autolinking
+          echo "{}" > android/build/generated/autolinking/autolinking.json
+
       - name: Build release APK
         script: |
           cd android
