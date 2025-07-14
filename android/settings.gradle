@@ -1,0 +1,13 @@
+rootProject.name = 'SmokingTimer'
+
+include ':app'
+
+// Path corretto al plugin separato
+def reactNativeGradlePluginDir = new File(settingsDir, '../node_modules/@react-native/gradle-plugin')
+println("React Native Gradle Plugin Path: " + reactNativeGradlePluginDir.absolutePath)
+
+if (reactNativeGradlePluginDir.exists()) {
+    includeBuild(reactNativeGradlePluginDir)
+} else {
+    throw new GradleException("React Native Gradle Plugin directory non trovato: " + reactNativeGradlePluginDir.absolutePath)
+}

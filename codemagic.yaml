@@ -1,0 +1,42 @@
+workflows:
+  react-native-bare-android:
+    name: React Native Bare Android Build
+    max_build_duration: 120
+    environment:
+      node: 18
+      java: 17
+      android_signing:
+        - SMOKINGTIMER_RELEASE # 🔑 nome del keystore caricato nei Secure Files Codemagic
+    scripts:
+      - name: Install dependencies
+        script: |
+          echo "📦 Installing dependencies..."
+          npm ci
+
+      - name: Clean Gradle
+        script: |
+          echo "🧹 Cleaning Gradle build..."
+          cd android
+          ./gradlew clean
+
+      - name: Build release APK
+        script: |
+          echo "🏗️ Building release APK..."
+          cd android
+          ./gradlew assembleRelease --no-daemon --max-workers=2
+
+      - name: Build release AAB
+        script: |
+          echo "📦 Building release AAB..."
+          cd android
+          ./gradlew bundleRelease --no-daemon --max-workers=2
+
+    artifacts:
+      - android/app/build/outputs/**/*.apk
+      - android/app/build/outputs/**/*.aab
+
+    cache:
+      cache_paths:
+        - ~/.gradle/caches
+        - ~/.gradle/wrapper
+        - node_modules
