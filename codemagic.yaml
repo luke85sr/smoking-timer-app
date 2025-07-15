@@ -13,6 +13,17 @@ workflows:
           echo "📦 Installing dependencies..."
           npm ci
 
+      - name: Create dummy autolinking.json (if missing)
+        script: |
+          echo "📄 Checking autolinking.json..."
+          mkdir -p android/build/generated/autolinking
+          if [ ! -f android/build/generated/autolinking/autolinking.json ]; then
+            echo "{}" > android/build/generated/autolinking/autolinking.json
+            echo "✅ Created dummy autolinking.json"
+          else
+            echo "✅ autolinking.json already exists"
+          fi
+
       - name: Clean Gradle
         script: |
           echo "🧹 Cleaning Gradle build..."

@@ -2,7 +2,7 @@ rootProject.name = 'SmokingTimer'
 
 include ':app'
 
-// ✅ Percorso al plugin Gradle di React Native
+/** ✅ Percorso al plugin Gradle di React Native */
 def reactNativeGradlePluginDir = new File(settingsDir, '../node_modules/@react-native/gradle-plugin')
 println("📦 React Native Gradle Plugin Path: " + reactNativeGradlePluginDir.absolutePath)
 
@@ -12,7 +12,7 @@ if (reactNativeGradlePluginDir.exists()) {
     throw new GradleException("❌ React Native Gradle Plugin directory non trovato: " + reactNativeGradlePluginDir.absolutePath)
 }
 
-// ✅ Includi librerie native aggiuntive (es: notifee, sqlite, linear gradient)
+/** ✅ Includi librerie native aggiuntive */
 include(":react-native-sqlite-storage")
 project(":react-native-sqlite-storage").projectDir = new File(rootProject.projectDir, "../node_modules/react-native-sqlite-storage/platforms/android")
 

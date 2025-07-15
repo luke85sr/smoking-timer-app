@@ -5,7 +5,7 @@ buildscript {
         minSdkVersion = 21
         compileSdkVersion = 34
         targetSdkVersion = 34
-        kotlinVersion = "1.9.23" // ✅ Versione stabile e compatibile
+        kotlinVersion = "1.8.22" // ✅ Versione compatibile con RN < 0.74
     }
     repositories {
         google()
@@ -14,7 +14,7 @@ buildscript {
     dependencies {
         classpath("com.android.tools.build:gradle:8.3.1") // ✅ Ultima versione stabile
         classpath("com.facebook.react:react-native-gradle-plugin")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion") // ✅ Bloccato a 1.8.22
     }
 }
 
@@ -26,7 +26,7 @@ allprojects {
     }
 }
 
-// ✅ Imposta JVM target 17 solo sui progetti application
+// ✅ Imposta JVM target 17 solo per progetti application
 subprojects {
     afterEvaluate { subproject ->
         if (subproject.plugins.hasPlugin("com.android.application")) {
@@ -40,6 +40,14 @@ subprojects {
                         jvmTarget = "17"
                     }
                 }
+            }
+        } else if (subproject.plugins.hasPlugin("com.android.library")) {
+            subproject.android {
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_17
+                    targetCompatibility JavaVersion.VERSION_17
+                }
+                // ❌ Niente kotlinOptions per librerie!
             }
         }
     }

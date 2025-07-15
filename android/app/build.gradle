@@ -13,13 +13,14 @@ android {
         versionCode 1
         versionName "1.0"
 
-        // ✅ Fix per Kotlin Daemon su Codemagic
+        // ✅ Fix per Kotlin Daemon su CI/Codemagic
         multiDexEnabled true
     }
 
     buildTypes {
         release {
-            signingConfig signingConfigs.debug // 👉 cambia se usi keystore custom
+            // 👉 Assicurati di configurare il keystore corretto in signingConfigs
+            signingConfig signingConfigs.debug
             minifyEnabled false
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
@@ -49,7 +50,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
 }
 
-// ✅ Patch autolinking tasks per CI
+// ✅ Patch per disabilitare task autolinking solo in CI (Codemagic)
 afterEvaluate {
     if (System.getenv("CI") == "true") {
         tasks.matching {
