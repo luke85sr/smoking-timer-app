@@ -4,20 +4,27 @@ apply plugin: "org.jetbrains.kotlin.android"
 
 android {
     namespace "com.luke85sr.smokingtimer"
-    compileSdkVersion 34
+    compileSdkVersion rootProject.ext.compileSdkVersion
 
     defaultConfig {
         applicationId "com.luke85sr.smokingtimer"
-        minSdkVersion 21
-        targetSdkVersion 34
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+
+        // ✅ Fix per Kotlin Daemon su Codemagic
+        multiDexEnabled true
     }
 
     buildTypes {
         release {
+            signingConfig signingConfigs.debug // 👉 cambia se usi keystore custom
             minifyEnabled false
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+        }
+        debug {
+            signingConfig signingConfigs.debug
         }
     }
 
@@ -29,21 +36,27 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    packagingOptions {
+        exclude("META-INF/LICENSE*")
+        exclude("META-INF/NOTICE*")
+    }
 }
 
 dependencies {
     implementation "com.facebook.react:react-android"
-    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.0.0"
+    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
 }
 
+// ✅ Patch autolinking tasks per CI
 afterEvaluate {
     if (System.getenv("CI") == "true") {
         tasks.matching {
             it.name == "generateAutolinkingPackageList" || it.name == "generateReactNativeEntryPoint"
         }.configureEach {
             enabled = false
-            println("⚡ Patch: Disabilitato task ${it.name} in CI")
+            println("⚡ Patch CI: Disabilitato task ${it.name}")
         }
     }
 }

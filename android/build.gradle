@@ -5,7 +5,7 @@ buildscript {
         minSdkVersion = 21
         compileSdkVersion = 34
         targetSdkVersion = 34
-        kotlinVersion = "1.9.0"
+        kotlinVersion = "1.9.23" // ✅ Versione stabile e compatibile
     }
     repositories {
         google()
@@ -43,4 +43,5 @@ subprojects {
     }
 }
 
+// ✅ Patch per build React Native bare workflow
 apply plugin: "com.facebook.react.rootproject"

@@ -15,8 +15,8 @@ class MainApplication : Application(), ReactApplication {
         }
 
         override fun getPackages(): List<ReactPackage> {
+            // ✅ Autolinking React Native gestisce tutto
             return PackageList(this).packages
-            // ✅ Nessun aggiunta manuale qui! Autolinking gestisce tutto
         }
 
         override fun getJSMainModuleName(): String {

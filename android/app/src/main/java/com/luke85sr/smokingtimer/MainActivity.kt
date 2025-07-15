@@ -6,14 +6,14 @@ import com.facebook.react.ReactActivity
 class MainActivity : ReactActivity() {
 
     /**
-     * Returns the name of the main component registered from JavaScript.
+     * Restituisce il nome del componente principale registrato da JavaScript.
+     * Deve corrispondere a quello registrato in AppRegistry.registerComponent
      */
-    override fun getMainComponentName(): String = "main"
+    override fun getMainComponentName(): String = "SmokingTimer" // ✅ correggi se il nome JS è diverso
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // ✅ Usa il tema definito nello styles.xml
+        // ✅ Applica il tema definito nello styles.xml prima della creazione
         setTheme(R.style.AppTheme)
         super.onCreate(null)
     }
 }
-
