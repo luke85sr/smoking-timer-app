@@ -26,7 +26,7 @@ allprojects {
     }
 }
 
-// ✅ Imposta JVM target 17 SOLO per applicazioni, non per librerie
+// ✅ Imposta JVM target 17 solo sui progetti application
 subprojects {
     afterEvaluate { subproject ->
         if (subproject.plugins.hasPlugin("com.android.application")) {
@@ -35,20 +35,15 @@ subprojects {
                     sourceCompatibility JavaVersion.VERSION_17
                     targetCompatibility JavaVersion.VERSION_17
                 }
-                kotlinOptions {
-                    jvmTarget = "17"
-                }
-            }
-        } else if (subproject.plugins.hasPlugin("com.android.library")) {
-            subproject.android {
-                compileOptions {
-                    sourceCompatibility JavaVersion.VERSION_17
-                    targetCompatibility JavaVersion.VERSION_17
+                if (subproject.hasProperty("kotlinOptions")) {
+                    subproject.kotlinOptions {
+                        jvmTarget = "17"
+                    }
                 }
             }
         }
     }
 }
 
-// ✅ Patch per build React Native bare workflow
+// ✅ Patch per React Native bare workflow
 apply plugin: "com.facebook.react.rootproject"
