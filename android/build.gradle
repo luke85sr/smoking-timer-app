@@ -28,9 +28,9 @@ allprojects {
 
 // ✅ Imposta JVM target 17 per Kotlin e Java
 subprojects {
-    afterEvaluate {
-        if (project.hasProperty("android")) {
-            android {
+    afterEvaluate { subproject ->
+        if (subproject.plugins.hasPlugin("com.android.application")) {
+            subproject.android {
                 compileOptions {
                     sourceCompatibility JavaVersion.VERSION_17
                     targetCompatibility JavaVersion.VERSION_17
