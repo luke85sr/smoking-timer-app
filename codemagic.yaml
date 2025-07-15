@@ -25,14 +25,14 @@ workflows:
           echo "🏗️ Building release APK..."
           cd android
           chmod +x gradlew  # ✅ fix permessi per gradlew
-          ./gradlew assembleRelease --no-daemon --max-workers=2
+          ./gradlew assembleRelease --no-daemon --max-workers=2 --stacktrace --info --warning-mode all
 
       - name: Build release AAB
         script: |
           echo "📦 Building release AAB..."
           cd android
           chmod +x gradlew  # ✅ fix permessi per gradlew
-          ./gradlew bundleRelease --no-daemon --max-workers=2
+          ./gradlew bundleRelease --no-daemon --max-workers=2 --stacktrace --info --warning-mode all
 
     artifacts:
       - android/app/build/outputs/**/*.apk
